@@ -1,0 +1,50 @@
+{% extends 'health_records/base.html' %}
+{% block content %}
+
+<div class="card shadow-sm p-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="text-primary mb-0">Chi tiết hồ sơ khám sức khỏe</h3>
+    <div>
+      <a href="{% url 'healthrecord_list' %}" class="btn btn-secondary me-2">← Quay lại</a>
+      <a href="{% url 'healthrecord_edit' record.id %}" class="btn btn-primary">Sửa hồ sơ</a>
+    </div>
+  </div>
+
+  <table class="table table-bordered">
+    <tr class="table-success section-header"><th colspan="2">1. Thông tin cá nhân</th></tr>
+    <tr><th>Mã NV</th><td>{{ record.ma_nv|default:"—" }}</td></tr>
+    <tr><th>Họ và tên</th><td>{{ record.full_name }}</td></tr>
+    <tr><th>Năm sinh</th><td>{{ record.birth_year|default:"—" }}</td></tr>
+    <tr><th>Giới tính</th><td>{{ record.gender|default:"—" }}</td></tr>
+
+    <tr class="table-success section-header"><th colspan="2">2. Thông tin công việc</th></tr>
+    <tr><th>Chức danh nghề nghiệp</th><td>{{ record.job_title|default:"—" }}</td></tr>
+    <tr><th>Chức vụ</th><td>{{ record.position|default:"—" }}</td></tr>
+    <tr><th>Khoa/Phòng</th><td>{{ record.department|default:"—" }}</td></tr>
+
+    <tr class="table-success section-header"><th colspan="2">3. Thông tin khám & tiêm chủng</th></tr>
+    <tr><th>Năm khám</th><td>{{ record.year }}</td></tr>
+    <tr><th>Ngày khám</th><td>{{ record.exam_date|date:"d/m/Y"|default:"—" }}</td></tr>
+    <tr><th>Loại khám</th><td>{{ record.exam_type|default:"—" }}</td></tr>
+    <tr><th>Cơ sở khám</th><td>{{ record.clinic_name|default:"—" }}</td></tr>
+    <tr><th>Chiều cao</th><td>{{ record.height_cm|default:"—" }} cm</td></tr>
+    <tr><th>Cân nặng</th><td>{{ record.weight_kg|default:"—" }} kg</td></tr>
+    <tr><th>Huyết áp</th><td>{{ record.blood_pressure|default:"—" }}</td></tr>
+    <tr>
+        <th>Đã tiêm vacxin</th>
+        <td>
+        {% if record.vaccinated_influvac %} Influvac tetra (Hà Lan)<br>{% endif %}
+        {% if record.vaccinated_vaxigrip %} Vaxigrip tetra (Pháp)<br>{% endif %}
+        {% if not record.vaccinated_influvac and not record.vaccinated_vaxigrip %} — {% endif %}
+        </td>
+    </tr>
+    <tr><th>Ngày tiêm</th><td>{{ record.vaccination_date|date:"d/m/Y"|default:"—" }}</td></tr>
+    </table>
+
+  <div class="text-muted small mt-4">
+    <p>Tạo lúc: {{ record.created_at|date:"d/m/Y H:i" }}</p>
+    <p>Cập nhật lúc: {{ record.updated_at|date:"d/m/Y H:i" }}</p>
+  </div>
+</div>
+
+{% endblock %}

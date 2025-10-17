@@ -1,0 +1,56 @@
+{% extends 'health_records/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h3>{{ title }}</h3>
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" class="needs-validation">
+      {% csrf_token %}
+      <div class="row g-3">
+        {% for field in form %}
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+            <small class="form-text text-muted">{{ field.help_text }}</small>
+          {% endif %}
+          {% for error in field.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger mt-3">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div class="mt-4 text-center">
+        <button type="submit" class="btn btn-primary px-4">💾 Lưu</button>
+        <a href="{% url 'healthrecord_list' %}" class="btn btn-secondary px-4">↩ Quay lại</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const classification = document.getElementById('id_health_classification');
+  const conclusion = document.getElementById('id_conclusion_text');
+  if (classification && conclusion) {
+    classification.addEventListener('change', function() {
+      const val = this.options[this.selectedIndex].text.trim().toUpperCase();
+      if (['I','II','III'].includes(val)) {
+        conclusion.value = 'Đủ sức khoẻ làm việc';
+      } else if (val === 'IV') {
+        conclusion.value = 'Làm việc hợp lý';
+      } else {
+        conclusion.value = '';
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'health_records/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Danh sách Phân loại sức khoẻ</h3>
+  <a href="{% url 'healthclass_add' %}" class="btn btn-success">+ Thêm</a>
+</div>
+
+<table class="table table-bordered">
+  <thead class="table-primary text-center">
+    <tr><th>STT</th><th>Phân loại sức khoẻ</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for c in classes %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ c.name }}</td>
+      <td class="text-center">
+        <a href="{% url 'healthclass_edit' c.id %}" class="btn btn-sm btn-primary">Sửa</a>
+        <a href="{% url 'healthclass_delete' c.id %}" class="btn btn-sm btn-danger">Xoá</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3" class="text-center text-muted">Chưa có dữ liệu</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="mb-3">
+  <label class="form-label">Tên phân loại</label>
+  <input type="text" name="name" value="{{ object.name|default:'' }}" class="form-control" required>
+</div>
+<div class="mb-3">
+  <label class="form-label">Ghi chú</label>
+  <textarea name="description" class="form-control" rows="2">{{ object.description|default:'' }}</textarea>
+</div>
+
+{% endblock %}

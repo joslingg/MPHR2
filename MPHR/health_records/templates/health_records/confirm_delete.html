@@ -1,0 +1,11 @@
+{% extends 'health_records/base.html' %}
+{% block content %}
+<div class="card p-4 shadow-sm">
+  <h4>Bạn có chắc muốn xoá {{ type }} <b>{{ object }}</b> không?</h4>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Xoá</button>
+    <a href="javascript:history.back()" class="btn btn-secondary">Huỷ</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'health_records/base.html' %}
+{% block content %}
+<h3>{{ title }}</h3>
+<form method="post" class="card p-3 shadow-sm">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="name" class="form-label">Tên Khoa/Phòng</label>
+    <input type="text" name="name" id="name" value="{{ object.name|default:'' }}" class="form-control" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Lưu</button>
+  <a href="{% url 'department_list' %}" class="btn btn-secondary">Quay lại</a>
+</form>
+{% endblock %}
