@@ -3,6 +3,9 @@ from django.contrib import messages
 from .models import HealthRecord, Department, ExamType, HealthClassification
 from .forms import HealthRecordForm
 from django.urls import reverse
+from django.db.models import Count
+import json
+from collections import Counter
 
 # -----------------------------
 # QUẢN LÝ HỒ SƠ KHÁM SỨC KHỎE
@@ -169,3 +172,52 @@ def healthclass_delete(request, pk):
         return redirect('healthclass_list')
     return render(request, 'health_records/confirm_delete.html', {'object': obj, 'type': 'Phân loại sức khoẻ'})
 
+def health_report(request):
+    # 1) Theo phân loại sức khoẻ (HealthClassification is FK)
+    hc_qs = (
+        HealthRecord.objects
+        .values('health_classification__name')
+        .annotate(count=Count('id'))
+        .order_by('health_classification__name')
+    )
+    health_labels = []
+    health_counts = []
+    for item in hc_qs:
+        label = item['health_classification__name'] or "Chưa phân loại"
+        health_labels.append(label)
+        health_counts.append(item['count'])
+
+    # 2) Theo kết luận (sử dụng property `conclusion` - an toàn, chính xác)
+    #    -> đếm bằng Python để sử dụng logic property (ưu tiên conclusion_text)
+    records = HealthRecord.objects.all()
+    conclusion_counter = Counter()
+    for r in records:
+        key = (r.conclusion or "").strip() or "Không có kết luận"
+        conclusion_counter[key] += 1
+
+    conclusion_labels = list(conclusion_counter.keys())
+    conclusion_counts = list(conclusion_counter.values())
+
+    # 3) Theo giới tính (dùng ORM)
+    gender_qs = (
+        HealthRecord.objects
+        .values('gender')
+        .annotate(count=Count('id'))
+        .order_by('gender')
+    )
+    gender_labels = []
+    gender_counts = []
+    for item in gender_qs:
+        label = item['gender'] or "Không rõ"
+        gender_labels.append(label)
+        gender_counts.append(item['count'])
+
+    context = {
+        'dept_labels': json.dumps(health_labels),
+        'dept_counts': json.dumps(health_counts),
+        'conclusion_labels': json.dumps(conclusion_labels),
+        'conclusion_counts': json.dumps(conclusion_counts),
+        'gender_labels': json.dumps(gender_labels),
+        'gender_counts': json.dumps(gender_counts),
+    }
+    return render(request, 'health_records/report.html', context)

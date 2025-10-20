@@ -1,0 +1,126 @@
+{% extends 'health_records/base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h3 class="text-center mb-4">📊 Báo cáo thống kê hồ sơ khám sức khỏe</h3>
+
+  <div class="row text-center">
+    <!-- Biểu đồ 1: Phân loại sức khỏe -->
+    <div class="col-md-4 mb-4">
+      <div class="card p-3 shadow-sm">
+        <h5 class="mb-3">Theo phân loại sức khỏe</h5>
+        <div style="height: 350px;">
+          <canvas id="healthPieChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Biểu đồ 2: Theo kết luận -->
+    <div class="col-md-4 mb-4">
+      <div class="card p-3 shadow-sm">
+        <h5 class="mb-3">Theo kết luận</h5>
+        <div style="height: 350px;">
+          <canvas id="conclusionPieChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Biểu đồ 3: Theo giới tính -->
+    <div class="col-md-4 mb-4">
+      <div class="card p-3 shadow-sm">
+        <h5 class="mb-3">Theo giới tính</h5>
+        <div style="height: 350px;">
+          <canvas id="genderPieChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const chartColors = [
+    "#4e79a7","#f28e2b","#e15759","#76b7b2","#59a14f",
+    "#edc948","#b07aa1","#ff9da7","#9c755f","#bab0ac"
+  ];
+
+  // 🟢 Tùy chọn chung cho biểu đồ
+  const chartOptions = {
+    responsive: true,
+    cutout: "65%",
+    plugins: {
+      legend: {
+        position: "bottom",
+        labels: {
+          font: { size: 16, weight: "500" },
+          padding: 20,
+          color: "#333",
+        }
+      },
+      tooltip: {
+        bodyFont: { size: 14 },
+        titleFont: { size: 16 }
+      }
+    }
+  };
+
+  // 🧩 Plugin hiển thị tổng ở giữa
+  const totalCenterPlugin = {
+    id: "totalCenter",
+    afterDraw(chart) {
+      const { ctx, chartArea: { top, bottom, left, right } } = chart;
+      const xCenter = (left + right) / 2;
+      const yCenter = (top + bottom) / 2;
+      const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+
+      ctx.save();
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillStyle = "#333";
+      ctx.textAlign = "center";
+      ctx.fillText(`Tổng: ${total}`, xCenter, yCenter + 5);
+      ctx.restore();
+    }
+  };
+
+  // 🟠 Biểu đồ theo phân loại sức khỏe
+  new Chart(document.getElementById("healthPieChart"), {
+    type: "doughnut",
+    data: {
+      labels: {{ dept_labels|safe }},
+      datasets: [{
+        data: {{ dept_counts|safe }},
+        backgroundColor: chartColors
+      }]
+    },
+    options: chartOptions,
+    plugins: [totalCenterPlugin]
+  });
+
+  // 🟣 Biểu đồ theo kết luận
+  new Chart(document.getElementById("conclusionPieChart"), {
+    type: "doughnut",
+    data: {
+      labels: {{ conclusion_labels|safe }},
+      datasets: [{
+        data: {{ conclusion_counts|safe }},
+        backgroundColor: chartColors
+      }]
+    },
+    options: chartOptions,
+    plugins: [totalCenterPlugin]
+  });
+
+  // 🔵 Biểu đồ theo giới tính
+  new Chart(document.getElementById("genderPieChart"), {
+    type: "doughnut",
+    data: {
+      labels: {{ gender_labels|safe }},
+      datasets: [{
+        data: {{ gender_counts|safe }},
+        backgroundColor: chartColors
+      }]
+    },
+    options: chartOptions,
+    plugins: [totalCenterPlugin]
+  });
+</script>
+{% endblock %}

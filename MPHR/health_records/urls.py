@@ -27,4 +27,6 @@ urlpatterns = [
     path('healthclasses/add/', views.healthclass_add, name='healthclass_add'),
     path('healthclasses/<int:pk>/edit/', views.healthclass_edit, name='healthclass_edit'),
     path('healthclasses/<int:pk>/delete/', views.healthclass_delete, name='healthclass_delete'),
+
+    path("report/", views.health_report, name="health_report"),
 ]
