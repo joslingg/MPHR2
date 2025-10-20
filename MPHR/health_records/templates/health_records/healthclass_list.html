@@ -24,13 +24,4 @@
     {% endfor %}
   </tbody>
 </table>
-<div class="mb-3">
-  <label class="form-label">Tên phân loại</label>
-  <input type="text" name="name" value="{{ object.name|default:'' }}" class="form-control" required>
-</div>
-<div class="mb-3">
-  <label class="form-label">Ghi chú</label>
-  <textarea name="description" class="form-control" rows="2">{{ object.description|default:'' }}</textarea>
-</div>
-
 {% endblock %}

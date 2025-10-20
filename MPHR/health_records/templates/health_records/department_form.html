@@ -7,7 +7,9 @@
     <label for="name" class="form-label">Tên Khoa/Phòng</label>
     <input type="text" name="name" id="name" value="{{ object.name|default:'' }}" class="form-control" required>
   </div>
-  <button type="submit" class="btn btn-primary">Lưu</button>
-  <a href="{% url 'department_list' %}" class="btn btn-secondary">Quay lại</a>
+  <div class="mt-4 text-center">
+    <button type="submit" class="btn btn-primary">Lưu</button>
+    <a href="{% url 'department_list' %}" class="btn btn-secondary">Quay lại</a>
+  </div>
 </form>
 {% endblock %}

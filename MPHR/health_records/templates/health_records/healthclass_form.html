@@ -7,7 +7,13 @@
     <label for="name" class="form-label">Tên Phân loại</label>
     <input type="text" name="name" id="name" value="{{ object.name|default:'' }}" class="form-control" required>
   </div>
-  <button type="submit" class="btn btn-primary">Lưu</button>
-  <a href="{% url 'department_list' %}" class="btn btn-secondary">Quay lại</a>
+  <div class="mb-3">
+    <label class="form-label">Ghi chú</label>
+    <textarea name="description" class="form-control" rows="2">{{ object.description|default:'' }}</textarea>
+  </div>
+  <div class="mt-4 text-center">
+    <button type="submit" class="btn btn-primary">Lưu</button>
+    <a href="{% url 'healthclass_list' %}" class="btn btn-secondary">Quay lại</a>
+  </div>
 </form>
 {% endblock %}
