@@ -39,18 +39,20 @@
 document.addEventListener('DOMContentLoaded', function() {
   const classification = document.getElementById('id_health_classification');
   const conclusion = document.getElementById('id_conclusion_text');
+
   if (classification && conclusion) {
     classification.addEventListener('change', function() {
-      const val = this.options[this.selectedIndex].text.trim().toUpperCase();
-      if (['I','II','III'].includes(val)) {
+      const val = this.value.trim();
+      if (['1', '2', '3'].includes(val)) {
         conclusion.value = 'Đủ sức khoẻ làm việc';
-      } else if (val === 'IV') {
+      } else if (val === '4') {
         conclusion.value = 'Làm việc hợp lý';
       } else {
         conclusion.value = '';
       }
     });
   }
+
 });
 </script>
 {% endblock %}

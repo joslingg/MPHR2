@@ -1,8 +1,10 @@
 from django import forms
 from .models import HealthRecord
 
-
+# 1️⃣ Form nhập thông tin hồ sơ sức khỏe
 class HealthRecordForm(forms.ModelForm):
+
+    # 4️⃣ Cấu hình form (fields, widget, label)
     class Meta:
         model = HealthRecord
         fields = [
@@ -15,30 +17,75 @@ class HealthRecordForm(forms.ModelForm):
             "group", "note", "result_file",
         ]
         widgets = {
-            "ma_nv": forms.TextInput(attrs={"class": "form-control"}),
-            "full_name": forms.TextInput(attrs={"class": "form-control"}),
-            "birth_year": forms.NumberInput(attrs={"class": "form-control"}),
+            "ma_nv": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Nhập mã nhân viên"
+            }),
+            "full_name": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Nhập họ và tên"
+            }),
+            "birth_year": forms.NumberInput(attrs={
+                "class": "form-control",
+                "placeholder": "Ví dụ: 1985"
+            }),
             "gender": forms.Select(attrs={"class": "form-select"}),
-            "job_title": forms.TextInput(attrs={"class": "form-control"}),
-            "position": forms.TextInput(attrs={"class": "form-control"}),
+            "job_title": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "VD: Điều dưỡng, Bác sĩ, Hộ lý..."
+            }),
+            "position": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "VD: Trưởng khoa, Nhân viên..."
+            }),
             "department": forms.Select(attrs={"class": "form-select"}),
             "vaccinated_influvac": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "vaccinated_vaxigrip": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "vaccination_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "year": forms.NumberInput(attrs={"class": "form-control"}),
-            "exam_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "vaccination_date": forms.DateInput(attrs={
+                "class": "form-control",
+                "type": "date"
+            }),
+            "year": forms.NumberInput(attrs={
+                "class": "form-control",
+                "placeholder": "Nhập năm khám"
+            }),
+            "exam_date": forms.DateInput(attrs={
+                "class": "form-control",
+                "type": "date"
+            }),
             "exam_type": forms.Select(attrs={"class": "form-select"}),
-            "clinic_name": forms.TextInput(attrs={"class": "form-control"}),
-            "height_cm": forms.NumberInput(attrs={"class": "form-control"}),
-            "weight_kg": forms.NumberInput(attrs={"class": "form-control"}),
-            "blood_pressure": forms.TextInput(attrs={"class": "form-control"}),
+            "clinic_name": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Nhập tên cơ sở khám"
+            }),
+            "height_cm": forms.NumberInput(attrs={
+                "class": "form-control",
+                "placeholder": "VD: 160"
+            }),
+            "weight_kg": forms.NumberInput(attrs={
+                "class": "form-control",
+                "placeholder": "VD: 52"
+            }),
+            "blood_pressure": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "VD: 120/80"
+            }),
             "health_classification": forms.Select(attrs={"class": "form-select"}),
-            "conclusion_text": forms.TextInput(attrs={"class": "form-control"}),
-            "group": forms.TextInput(attrs={"class": "form-control"}),
-            "note": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "conclusion_text": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Nhập kết luận nếu có"
+            }),
+            "group": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "VD: Nhóm 1, Nhóm 2..."
+            }),
+            "note": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "Ghi chú thêm (nếu có)"
+            }),
             "result_file": forms.ClearableFileInput(attrs={"class": "form-control"}),
         }
-
         labels = {
             "ma_nv": "Mã nhân viên",
             "full_name": "Họ và tên",
@@ -64,6 +111,7 @@ class HealthRecordForm(forms.ModelForm):
             "result_file": "File kết quả (PDF)",
         }
 
+    # 3️⃣ Kiểm tra logic hợp lệ khi nhập form
     def clean(self):
         cleaned_data = super().clean()
         vaccinated_influvac = cleaned_data.get("vaccinated_influvac")
@@ -73,3 +121,15 @@ class HealthRecordForm(forms.ModelForm):
         if vaccination_date and not (vaccinated_influvac or vaccinated_vaxigrip):
             raise forms.ValidationError("Bạn đã nhập ngày tiêm nhưng chưa chọn loại vacxin.")
         return cleaned_data
+
+
+# 2️⃣ Form import file Excel
+class ExcelImportForm(forms.Form):
+    file = forms.FileField(
+        label="Chọn file Excel (.xlsx)",
+        allow_empty_file=False,
+        widget=forms.ClearableFileInput(attrs={
+            "class": "form-control",
+            "accept": ".xlsx"
+        })
+    )

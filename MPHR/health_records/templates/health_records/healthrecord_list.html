@@ -1,9 +1,17 @@
 {% extends 'health_records/base.html' %}
 {% block title %}Danh sách hồ sơ{% endblock %}
 {% block content %}
+
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>Danh sách hồ sơ khám sức khoẻ</h3>
-  <a href="{% url 'healthrecord_add' %}" class="btn btn-success">+ Thêm hồ sơ</a>
+  <h3 class="mb-0">Danh sách hồ sơ khám sức khoẻ</h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'healthrecord_add' %}" class="btn btn-success d-flex align-items-center px-3">
+      <i class="bi bi-plus-circle me-2"></i> Thêm hồ sơ
+    </a>
+    <a href="{% url 'import_health_records' %}" class="btn btn-outline-primary d-flex align-items-center px-3">
+      <i class="bi bi-upload me-2"></i> Import hồ sơ
+    </a>
+  </div>
 </div>
 
 <table class="table table-striped table-bordered align-middle">
@@ -24,7 +32,7 @@
     {% for record in records %}
     <tr class="align-middle text-center">
       <td>{{ forloop.counter }}</td>
-      <td class="text-left"><a href="{% url 'health_record_detail' record.id %}" class="link">{{ record.full_name }}</a></td>
+      <td class="text-left name-cell"><a href="{% url 'health_record_detail' record.id %}" class="link">{{ record.full_name }}</a></td>
       <td>{{ record.birth_year }}</td>
       <td>{{ record.gender }}</td>
       <td>{{ record.department }}</td>

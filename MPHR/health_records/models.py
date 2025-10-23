@@ -23,9 +23,7 @@ class ExamType(models.Model):
 
 
 class HealthClassification(models.Model):
-    """
-    Ví dụ các bản ghi: "I", "II", "III", "IV"
-    """
+    code = models.CharField(max_length=10, unique=True, verbose_name="Mã loại")  # ví dụ: I, II, III, IV
     name = models.CharField(max_length=50, unique=True, verbose_name="Phân loại")
     description = models.TextField(blank=True, null=True, verbose_name="Ghi chú")
 

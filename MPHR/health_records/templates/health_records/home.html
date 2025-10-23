@@ -1,0 +1,158 @@
+{% extends 'health_records/base.html' %}
+{% block title %}Trang chủ - Hồ sơ khám sức khoẻ{% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+  <h3 class="text-center mb-4">
+    🏥 Hệ thống quản lý hồ sơ khám sức khoẻ
+  </h3>
+
+  <!-- Thẻ thống kê tổng quan -->
+  <div class="row text-center mb-5">
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0 bg-primary text-white">
+        <div class="card-body">
+          <h5 class="card-title">Tổng số hồ sơ</h5>
+          <h2 class="fw-bold">{{ total_records }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0 bg-success text-white">
+        <div class="card-body">
+          <h5 class="card-title">Tổng số khoa/phòng</h5>
+          <h2 class="fw-bold">{{ total_departments }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0 bg-warning text-dark">
+        <div class="card-body">
+          <h5 class="card-title">Số loại khám</h5>
+          <h2 class="fw-bold">{{ total_examtypes }}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BIỂU ĐỒ TRÒN -->
+  <div class="row text-center">
+    <!-- Biểu đồ 1: Phân loại sức khoẻ -->
+    <div class="col-md-4 mb-4">
+      <div class="card p-3 shadow-sm">
+        <h5 class="mb-3 fw-semibold">Theo phân loại sức khoẻ</h5>
+        <div class="chart-wrapper" style="height: 300px;">
+          <canvas id="healthChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Biểu đồ 2: Theo kết luận -->
+    <div class="col-md-4 mb-4">
+      <div class="card p-3 shadow-sm">
+        <h5 class="mb-3 fw-semibold">Theo kết luận</h5>
+        <div class="chart-wrapper" style="height: 300px;">
+          <canvas id="conclusionChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Biểu đồ 3: Theo giới tính -->
+    <div class="col-md-4 mb-4">
+      <div class="card p-3 shadow-sm">
+        <h5 class="mb-3 fw-semibold">Theo giới tính</h5>
+        <div class="chart-wrapper" style="height: 300px;">
+          <canvas id="genderChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nút điều hướng -->
+  <div class="text-center mt-4">
+    <a href="{% url 'healthrecord_list' %}" class="btn btn-outline-primary btn-lg m-2">
+      📄 Hồ sơ sức khoẻ
+    </a>
+    <a href="{% url 'department_list' %}" class="btn btn-outline-success btn-lg m-2">
+      ⚙️ Quản lý danh mục
+    </a>
+    <a href="{% url 'health_report' %}" class="btn btn-outline-info btn-lg m-2">
+      📊 Báo cáo thống kê
+    </a>
+  </div>
+</div>
+
+<!-- Biểu đồ JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  window.addEventListener("load", function() {
+    const chartColors = [
+      "#4e79a7","#f28e2b","#e15759","#76b7b2","#59a14f",
+      "#edc948","#b07aa1","#ff9da7","#9c755f","#bab0ac"
+    ];
+
+    const chartOptions = {
+      responsive: true,
+      cutout: "65%",
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { font: { size: 15, weight: "500" }, padding: 15, color: "#333" }
+        },
+        tooltip: { bodyFont: { size: 14 }, titleFont: { size: 15 } }
+      }
+    };
+
+    const totalCenterPlugin = {
+      id: "totalCenter",
+      afterDraw(chart) {
+        const { ctx, chartArea: { top, bottom, left, right } } = chart;
+        const x = (left + right) / 2;
+        const y = (top + bottom) / 2;
+        const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+        ctx.save();
+        ctx.font = "bold 16px sans-serif";
+        ctx.fillStyle = "#333";
+        ctx.textAlign = "center";
+        ctx.fillText(`Tổng: ${total}`, x, y + 5);
+        ctx.restore();
+      }
+    };
+
+    // Biểu đồ 1: Phân loại sức khỏe
+    new Chart(document.getElementById("healthChart"), {
+      type: "doughnut",
+      data: {
+        labels: {{ dept_labels|safe }},
+        datasets: [{ data: {{ dept_counts|safe }}, backgroundColor: chartColors }]
+      },
+      options: chartOptions,
+      plugins: [totalCenterPlugin]
+    });
+
+    // Biểu đồ 2: Kết luận
+    new Chart(document.getElementById("conclusionChart"), {
+      type: "doughnut",
+      data: {
+        labels: {{ conclusion_labels|safe }},
+        datasets: [{ data: {{ conclusion_counts|safe }}, backgroundColor: chartColors }]
+      },
+      options: chartOptions,
+      plugins: [totalCenterPlugin]
+    });
+
+    // Biểu đồ 3: Giới tính
+    new Chart(document.getElementById("genderChart"), {
+      type: "doughnut",
+      data: {
+        labels: {{ gender_labels|safe }},
+        datasets: [{ data: {{ gender_counts|safe }}, backgroundColor: chartColors }]
+      },
+      options: chartOptions,
+      plugins: [totalCenterPlugin]
+    });
+  });
+</script>
+
+
+{% endblock %}

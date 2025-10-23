@@ -2,8 +2,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('', views.home, name='home'),
+
     # === Hồ sơ khám sức khoẻ ===
-    path('', views.healthrecord_list, name='healthrecord_list'),
+    path('health_records/', views.healthrecord_list, name='healthrecord_list'),
     path('add/', views.healthrecord_add, name='healthrecord_add'),
     path('<int:pk>/edit/', views.healthrecord_edit, name='healthrecord_edit'),
     path('<int:pk>/delete/', views.healthrecord_delete, name='healthrecord_delete'),
@@ -28,5 +30,11 @@ urlpatterns = [
     path('healthclasses/<int:pk>/edit/', views.healthclass_edit, name='healthclass_edit'),
     path('healthclasses/<int:pk>/delete/', views.healthclass_delete, name='healthclass_delete'),
 
+    # === Báo cáo thống kê ===
     path("report/", views.health_report, name="health_report"),
+    
+    # === Import excel ===
+    path('import-excel/', views.import_health_records, name='import_health_records'),
+    path('download-sample/', views.download_sample_healthrecord, name='download_sample_healthrecord'),
+
 ]
