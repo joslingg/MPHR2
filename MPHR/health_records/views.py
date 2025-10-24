@@ -12,6 +12,8 @@ from .forms import ExcelImportForm
 import os
 from django.conf import settings
 import datetime
+import pandas as pd
+from django.db import transaction
 
 # -----------------------------
 # TRANG CHỦ
@@ -257,138 +259,109 @@ def _to_date(val):
     return None
 
 def import_health_records(request):
-    """
-    Import file Excel (.xlsx) theo header mẫu.
-    KHÔNG tạo mới dữ liệu liên kết (Department, ExamType, HealthClassification).
-    Nếu không tìm thấy FK -> bỏ qua dòng và báo lỗi cụ thể.
-    """
     if request.method == "POST":
         form = ExcelImportForm(request.POST, request.FILES)
         if form.is_valid():
             file = request.FILES["file"]
+
             try:
-                wb = openpyxl.load_workbook(file, data_only=True)
-                ws = wb.active
-
-                headers = [str(c.value).strip() if c.value else "" for c in ws[1]]
-
-                col_map = {
-                    "Mã nhân viên": "ma_nv",
-                    "Họ và tên": "full_name",
-                    "Năm sinh": "birth_year",
-                    "Giới tính": "gender",
-                    "Chức danh nghề nghiệp": "job_title",
-                    "Chức vụ": "position",
-                    "Khoa/Phòng": "department",
-                    "Đã tiêm Influvac (Hà Lan)": "vaccinated_influvac",
-                    "Đã tiêm Vaxigrip (Pháp)": "vaccinated_vaxigrip",
-                    "Ngày tiêm chủng": "vaccination_date",
-                    "Năm khám": "year",
-                    "Ngày khám": "exam_date",
-                    "Loại khám": "exam_type",
-                    "Cơ sở khám": "clinic_name",
-                    "Chiều cao (cm)": "height_cm",
-                    "Cân nặng (kg)": "weight_kg",
-                    "Huyết áp (mmHg)": "blood_pressure",
-                    "Phân loại sức khoẻ": "health_classification",
-                    "Kết luận (nếu muốn nhập tay)": "conclusion_text",
-                    "Nhóm": "group",
-                    "Ghi chú": "note",
-                    "File kết quả (PDF)": "result_file",
-                }
-
-                col_index = {}
-                for i, h in enumerate(headers):
-                    if h in col_map:
-                        col_index[col_map[h]] = i
-
-                created = 0
-                skipped = 0
-                errors = []
-
-                for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
-                    try:
-                        if not row or all(v is None for v in row):
-                            continue
-
-                        data = {key: row[idx] if idx < len(row) else None for key, idx in col_index.items()}
-                        if not data.get("full_name"):
-                            skipped += 1
-                            errors.append(f"Dòng {row_idx}: Thiếu 'Họ và tên'.")
-                            continue
-
-                        # 🔎 Kiểm tra tồn tại Department
-                        dept_name = (data.get("department") or "").strip()
-                        dept = None
-                        if dept_name:
-                            dept = Department.objects.filter(name__iexact=dept_name).first()
-                            if not dept:
-                                skipped += 1
-                                errors.append(f"Dòng {row_idx}: Khoa/Phòng '{dept_name}' chưa có trong hệ thống.")
-                                continue
-
-                        # 🔎 Kiểm tra tồn tại ExamType
-                        examtype_name = (data.get("exam_type") or "").strip()
-                        examtype = None
-                        if examtype_name:
-                            examtype = ExamType.objects.filter(name__iexact=examtype_name).first()
-                            if not examtype:
-                                skipped += 1
-                                errors.append(f"Dòng {row_idx}: Loại khám '{examtype_name}' chưa có trong hệ thống.")
-                                continue
-
-                        # 🔎 Kiểm tra tồn tại HealthClassification
-                        hc_name = (data.get("health_classification") or "").strip()
-                        hc_obj = None
-                        if hc_name:
-                            hc_obj = HealthClassification.objects.filter(name__iexact=hc_name).first()
-                            if not hc_obj:
-                                skipped += 1
-                                errors.append(f"Dòng {row_idx}: Phân loại sức khoẻ '{hc_name}' chưa có trong hệ thống.")
-                                continue
-
-                        hr = HealthRecord.objects.create(
-                            ma_nv=data.get("ma_nv"),
-                            full_name=data.get("full_name"),
-                            birth_year=int(data["birth_year"]) if data.get("birth_year") else None,
-                            gender=data.get("gender"),
-                            job_title=data.get("job_title"),
-                            position=data.get("position"),
-                            department=dept,
-                            vaccinated_influvac=_to_bool(data.get("vaccinated_influvac")),
-                            vaccinated_vaxigrip=_to_bool(data.get("vaccinated_vaxigrip")),
-                            vaccination_date=_to_date(data.get("vaccination_date")),
-                            year=int(data["year"]) if data.get("year") else None,
-                            exam_date=_to_date(data.get("exam_date")),
-                            exam_type=examtype,
-                            clinic_name=data.get("clinic_name"),
-                            height_cm=data.get("height_cm"),
-                            weight_kg=data.get("weight_kg"),
-                            blood_pressure=data.get("blood_pressure"),
-                            health_classification=hc_obj,
-                            conclusion_text=data.get("conclusion_text"),
-                            group=data.get("group"),
-                            note=data.get("note"),
-                        )
-                        created += 1
-
-                    except Exception as e_row:
-                        skipped += 1
-                        errors.append(f"Dòng {row_idx}: {e_row}")
-
-                if created:
-                    messages.success(request, f"✅ Đã nhập {created} hồ sơ thành công.")
-                if errors:
-                    msg_err = f"⚠️ Có {len(errors)} dòng lỗi. Một số ví dụ:\n" + "\n".join(errors[:10])
-                    messages.error(request, msg_err)
-
+                df = pd.read_excel(file)
             except Exception as e:
-                messages.error(request, f"❌ Lỗi khi đọc file: {e}")
+                messages.error(request, f"❌ Lỗi khi đọc file Excel: {e}")
+                return redirect("healthrecord_list")
+
+            required_columns = ["Mã nhân viên", "Họ và tên", "Khoa/Phòng"]
+            for col in required_columns:
+                if col not in df.columns:
+                    messages.error(request, f"❌ Thiếu cột bắt buộc: {col}")
+                    return redirect("healthrecord_list")
+
+            errors = []
+            new_records = []
+
+            try:
+                with transaction.atomic():  # đảm bảo all-or-nothing
+                    for idx, row in df.iterrows():
+                        row_num = idx + 2
+                        ma_nv = str(row.get("Mã nhân viên", "")).strip()
+                        full_name = str(row.get("Họ và tên", "")).strip()
+                        department_name = str(row.get("Khoa/Phòng", "")).strip()
+
+                        if not ma_nv or not full_name or not department_name:
+                            errors.append(f"Dòng {row_num}: Thiếu Mã NV, Họ tên hoặc Khoa/Phòng.")
+                            continue
+
+                        department = Department.objects.filter(name__iexact=department_name).first()
+                        if not department:
+                            errors.append(f"Dòng {row_num}: Không tìm thấy Khoa/Phòng '{department_name}'.")
+                            continue
+
+                        # Loại khám
+                        exam_type_name = str(row.get("Loại khám", "")).strip()
+                        exam_type = None
+                        if exam_type_name and exam_type_name.lower() != "nan":
+                            exam_type = ExamType.objects.filter(name__iexact=exam_type_name).first()
+                            if not exam_type:
+                                errors.append(f"Dòng {row_num}: Không tìm thấy Loại khám '{exam_type_name}'.")
+                                continue
+
+                        # Phân loại sức khỏe
+                        classification_name = str(row.get("Phân loại", "")).strip()
+                        classification = None
+                        if classification_name:
+                            classification = HealthClassification.objects.filter(name__iexact=classification_name).first()
+                            if not classification:
+                                errors.append(f"Dòng {row_num}: Không tìm thấy Phân loại '{classification_name}'.")
+                                continue
+
+                        exam_date = _to_date(row.get("Ngày khám"))
+                        status = "done" if exam_date else "pending"
+
+                        record = HealthRecord(
+                            ma_nv=ma_nv,
+                            full_name=full_name,
+                            birth_year=row.get("Năm sinh") if pd.notna(row.get("Năm sinh")) else None,
+                            gender=row.get("Giới tính") if pd.notna(row.get("Giới tính")) else "Khác",
+                            job_title=row.get("Chức danh nghề nghiệp") if pd.notna(row.get("Chức danh nghề nghiệp")) else "",
+                            position=row.get("Chức vụ") if pd.notna(row.get("Chức vụ")) else "",
+                            department=department,
+                            exam_type=exam_type,
+                            exam_date=exam_date,
+                            health_classification=classification,
+                            conclusion_text=row.get("Kết luận (nếu muốn nhập tay)") if pd.notna(row.get("Kết luận (nếu muốn nhập tay)")) else "Chưa khám",
+                            year=row.get("Năm khám") if pd.notna(row.get("Năm khám")) else None,
+                            vaccinated_influvac=_to_bool(row.get("Đã tiêm Influvac (Hà Lan)")),
+                            vaccinated_vaxigrip=_to_bool(row.get("Đã tiêm Vaxigrip (Pháp)")),
+                            vaccination_date=_to_date(row.get("Ngày tiêm chủng")),
+                            height_cm=row.get("Chiều cao (cm)") if pd.notna(row.get("Chiều cao (cm)")) else None,
+                            weight_kg=row.get("Cân nặng (kg)") if pd.notna(row.get("Cân nặng (kg)")) else None,
+                            blood_pressure=row.get("Huyết áp (mmHg)") if pd.notna(row.get("Huyết áp (mmHg)")) else "",
+                            clinic_name=row.get("Cơ sở khám") if pd.notna(row.get("Cơ sở khám")) else "",
+                            group=row.get("Nhóm") if pd.notna(row.get("Nhóm")) else "",
+                            note=row.get("Ghi chú") if pd.notna(row.get("Ghi chú")) else "",
+                            status=status,
+                        )
+                        new_records.append(record)
+
+                    if errors:
+                        raise ValueError("\n".join(errors))
+
+                    HealthRecord.objects.bulk_create(new_records)
+                    messages.success(request, f"✅ Import thành công {len(new_records)} hồ sơ.")
+                    return redirect("import_health_records")
+
+            except ValueError as ve:
+                messages.error(request, f"Lỗi dữ liệu:<br>{str(ve).replace(chr(10), '<br>')}")
+            except Exception as e:
+                messages.error(request, f"⚠️ Lỗi không xác định: {e}")
+
+            return redirect("import_health_records")
 
     else:
         form = ExcelImportForm()
 
     return render(request, "health_records/import_excel.html", {"form": form})
+
 
 def download_sample_healthrecord(request):
     file_path = os.path.join(settings.BASE_DIR, 'static', 'samples', 'mau_import.xlsx')

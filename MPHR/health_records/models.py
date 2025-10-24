@@ -107,3 +107,9 @@ class HealthRecord(models.Model):
         if name == "IV":
             return "Làm việc hợp lý"
         return ""
+
+    status = models.CharField(
+    max_length=20,
+    choices=[("done", "Đã khám"), ("pending", "Chưa khám")],
+    default="pending"
+)
