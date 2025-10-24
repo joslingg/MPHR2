@@ -8,56 +8,58 @@
     <a href="{% url 'healthrecord_add' %}" class="btn btn-success d-flex align-items-center px-3">
       <i class="bi bi-plus-circle me-2"></i> Thêm hồ sơ
     </a>
-    <a href="{% url 'import_health_records' %}" class="btn btn-outline-primary d-flex align-items-center px-3">
+    <a href="{% url 'healthrecord_import' %}" class="btn btn-outline-primary d-flex align-items-center px-3">
       <i class="bi bi-upload me-2"></i> Import hồ sơ
     </a>
   </div>
 </div>
 
-<table class="table table-striped table-bordered align-middle">
-  <thead class="table-primary text-center">
-    <tr class="align-middle">
-      <th>STT</th>
-      <th>Họ tên</th>
-      <th>Năm sinh</th>
-      <th>Giới tính</th>
-      <th>Khoa/Phòng</th>
-      <th>Loại khám</th>
-      <th>Phân loại</th>
-      <th>Kết luận</th>
-      <th>Tình trạng khám</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for record in records %}
-    <tr class="align-middle text-center">
-      <td>{{ forloop.counter }}</td>
-      <td class="text-left name-cell"><a href="{% url 'health_record_detail' record.id %}" class="link">{{ record.full_name }}</a></td>
-      <td>{{ record.birth_year }}</td>
-      <td>{{ record.gender }}</td>
-      <td>{{ record.department }}</td>
-      <td>{{ record.exam_type }}</td>
-      <td>{{ record.health_classification }}</td>
-      <td>{{ record.conclusion }}</td>
-      <td>
-        {% if record.status == "done" %}
-          <span class="badge bg-success">Đã khám</span>
-        {% else %}
-          <span class="badge bg-danger">Chưa khám</span>
-        {% endif %}
-      </td>
-      <td class="text-center align-middle">
-        <div class="d-flex justify-content-center flex-wrap gap-2">
-          <a href="{% url 'health_record_detail' record.id %}" class="btn btn-sm btn-success">Chi tiết</a>
-          <a href="{% url 'healthrecord_edit' record.id %}" class="btn btn-sm btn-primary">Sửa</a>
-          <a href="{% url 'healthrecord_delete' record.id %}" class="btn btn-sm btn-danger">Xoá</a>
-        </div>
-      </td>
-    </tr>
-    {% empty %}
-    <tr><td colspan="9" class="text-center text-muted">Chưa có hồ sơ nào</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+  {% if records %}
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead class="table-light">
+        <tr class="text-center">
+          <th>#</th>
+          <th>Mã NV</th>
+          <th>Họ và tên</th>
+          <th>Năm</th>
+          <th>Phân loại</th>
+          <th>Loại khám</th>
+          <th>Khoa/Phòng</th>
+          <th>Trạng thái</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td class="text-center">{{ forloop.counter }}</td>
+          <td>{{ r.employee.code }}</td>
+          <td>{{ r.employee.full_name }}</td>
+          <td class="text-center">{{ r.year }}</td>
+          <td class="text-center">{{ r.health_classification|default:"—" }}</td>
+          <td>{{ r.examination_type|default:"—" }}</td>
+          <td>{{ r.employee.department|default:"—" }}</td>
+          <td class="text-center">
+            {% if r.status == "done" %}
+              <span class="badge bg-success">Đã khám</span>
+            {% else %}
+              <span class="badge bg-secondary">Không khám</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <a href="{% url 'record_detail' r.pk %}" class="btn btn-sm btn-outline-info">👁 Xem</a>
+            <a href="{% url 'record_edit' r.pk %}" class="btn btn-sm btn-outline-primary">✏ Sửa</a>
+            <a href="{% url 'record_delete' r.pk %}" class="btn btn-sm btn-outline-danger"
+               onclick="return confirm('Bạn chắc chắn muốn xóa hồ sơ này?')">🗑 Xóa</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted">Chưa có hồ sơ nào.</p>
+  {% endif %}
+</div>
 {% endblock %}

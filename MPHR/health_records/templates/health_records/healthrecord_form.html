@@ -1,58 +1,96 @@
 {% extends 'health_records/base.html' %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-<h3>{{ title }}</h3>
-<div class="card shadow-sm">
-  <div class="card-body">
-    <form method="post" enctype="multipart/form-data" class="needs-validation">
-      {% csrf_token %}
-      <div class="row g-3">
-        {% for field in form %}
-        <div class="col-md-6">
-          <label class="form-label fw-semibold">{{ field.label }}</label>
-          {{ field }}
-          {% if field.help_text %}
-            <small class="form-text text-muted">{{ field.help_text }}</small>
-          {% endif %}
-          {% for error in field.errors %}
-            <div class="text-danger small">{{ error }}</div>
-          {% endfor %}
-        </div>
-        {% endfor %}
-      </div>
+<div class="container mt-4">
+  <h3 class="mb-3">{{ title }}</h3>
 
-      {% if form.non_field_errors %}
-        <div class="alert alert-danger mt-3">
-          {{ form.non_field_errors }}
-        </div>
-      {% endif %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
 
-      <div class="mt-4 text-center">
-        <button type="submit" class="btn btn-primary px-4">💾 Lưu</button>
-        <a href="{% url 'healthrecord_list' %}" class="btn btn-secondary px-4">↩ Quay lại</a>
-      </div>
-    </form>
-  </div>
+  <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm" novalidate>
+    {% csrf_token %}
+    <div class="row g-3">
+      {# Render từng field với wrapper form-group để script dễ thao tác #}
+      {% for field in form %}
+        {# Nếu là field vaccine_name hoặc vaccination_date -> gắn data-vaccine-field="true" #}
+        {% if field.name == 'vaccine_name' or field.name == 'vaccination_date' %}
+          <div class="col-md-6 form-group" data-vaccine-field="true">
+        {% else %}
+          <div class="col-md-6 form-group">
+        {% endif %}
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+              <div class="form-text text-muted">{{ field.help_text }}</div>
+            {% endif %}
+            {% for err in field.errors %}
+              <div class="text-danger small mt-1">{{ err }}</div>
+            {% endfor %}
+          </div>
+      {% endfor %}
+    </div>
+
+    <div class="mt-4 d-flex justify-content-between">
+      <a href="{% url 'healthrecord_list' %}" class="btn btn-secondary">⬅ Quay lại</a>
+      <button type="submit" class="btn btn-primary">💾 Lưu</button>
+    </div>
+  </form>
 </div>
 
+{# Script: toggle vaccine fields + small UX niceties #}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const classification = document.getElementById('id_health_classification');
-  const conclusion = document.getElementById('id_conclusion_text');
+  // ID mặc định của Django form field: id_vaccinated, id_vaccine_name, id_vaccination_date
+  const vaccinatedCheckbox = document.querySelector('#id_vaccinated');
+  const vaccineFields = document.querySelectorAll('[data-vaccine-field="true"]');
 
-  if (classification && conclusion) {
-    classification.addEventListener('change', function() {
-      const val = this.value.trim();
-      if (['1', '2', '3'].includes(val)) {
-        conclusion.value = 'Đủ sức khoẻ làm việc';
-      } else if (val === '4') {
-        conclusion.value = 'Làm việc hợp lý';
+  function setVaccineVisibility() {
+    const visible = vaccinatedCheckbox && vaccinatedCheckbox.checked;
+    vaccineFields.forEach(wrapper => {
+      if (visible) {
+        wrapper.style.display = '';
+        // enable inputs inside
+        wrapper.querySelectorAll('input, select, textarea').forEach(i => i.removeAttribute('disabled'));
       } else {
-        conclusion.value = '';
+        wrapper.style.display = 'none';
+        // disable inputs inside so they aren't submitted accidentally
+        wrapper.querySelectorAll('input, select, textarea').forEach(i => i.setAttribute('disabled', 'disabled'));
       }
     });
   }
 
+  if (vaccinatedCheckbox) {
+    // khởi tạo trạng thái ban đầu
+    setVaccineVisibility();
+    // lắng nghe thay đổi
+    vaccinatedCheckbox.addEventListener('change', setVaccineVisibility);
+  } else {
+    // nếu form không có trường vaccinated, vẫn ẩn vaccine fields để an toàn
+    vaccineFields.forEach(wrapper => wrapper.style.display = 'none');
+  }
+
+  // Tweak: thêm class bootstrap cho các input nếu template không tự thêm
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if (!el.classList.contains('form-control') && !el.classList.contains('form-select') && el.type !== 'checkbox' && el.type !== 'file') {
+      el.classList.add('form-control');
+    }
+    if (el.type === 'checkbox') {
+      // bọc checkbox vào form-check nếu cần
+      const parent = el.closest('.form-group');
+      if (parent && !parent.querySelector('.form-check')) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'form-check';
+        el.parentNode.insertBefore(wrapper, el);
+        wrapper.appendChild(el);
+        // di chuyển label
+        const lbl = parent.querySelector('label[for="' + el.id + '"]');
+        if (lbl) wrapper.appendChild(lbl);
+      }
+    }
+  });
 });
 </script>
 {% endblock %}

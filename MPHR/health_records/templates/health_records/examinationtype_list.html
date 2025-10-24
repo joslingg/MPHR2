@@ -2,7 +2,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h3>Danh sách Loại khám</h3>
-  <a href="{% url 'examtype_add' %}" class="btn btn-success">+ Thêm</a>
+  <a href="{% url 'examinationtype_add' %}" class="btn btn-success">+ Thêm</a>
 </div>
 
 <table class="table table-bordered">
@@ -10,13 +10,13 @@
     <tr><th>STT</th><th>Loại khám</th><th></th></tr>
   </thead>
   <tbody>
-    {% for e in examtypes %}
+    {% for e in examinationtypes %}
     <tr>
       <td>{{ forloop.counter }}</td>
       <td>{{ e.name }}</td>
       <td class="text-center">
-        <a href="{% url 'examtype_edit' e.id %}" class="btn btn-sm btn-primary">Sửa</a>
-        <a href="{% url 'examtype_delete' e.id %}" class="btn btn-sm btn-danger">Xoá</a>
+        <a href="{% url 'examinationtype_edit' e.id %}" class="btn btn-sm btn-primary">Sửa</a>
+        <a href="{% url 'examinationtype_delete' e.id %}" class="btn btn-sm btn-danger">Xoá</a>
       </td>
     </tr>
     {% empty %}

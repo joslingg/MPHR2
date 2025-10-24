@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import Department, ExamType, HealthClassification, HealthRecord
+from .models import (
+    Department,
+    ExaminationType,
+    HealthClassification,
+    Employee,
+    HealthRecord,
+)
 
 
 @admin.register(Department)
@@ -8,8 +14,8 @@ class DepartmentAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
-@admin.register(ExamType)
-class ExamTypeAdmin(admin.ModelAdmin):
+@admin.register(ExaminationType)
+class ExaminationTypeAdmin(admin.ModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
 
@@ -17,50 +23,56 @@ class ExamTypeAdmin(admin.ModelAdmin):
 @admin.register(HealthClassification)
 class HealthClassificationAdmin(admin.ModelAdmin):
     list_display = ("name", "description")
-    search_fields = ("name",)
+    search_fields = ("name", "description")
+
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ("code", "full_name", "gender", "department", "job_title", "position")
+    list_filter = ("department", "gender")
+    search_fields = ("full_name", "code")
+    ordering = ("full_name",)
 
 
 @admin.register(HealthRecord)
 class HealthRecordAdmin(admin.ModelAdmin):
     list_display = (
-        "ma_nv", "full_name", "birth_year", "gender", "department",
-        "year", "exam_type", "health_classification", "conclusion", "updated_at",
+        "employee",
+        "year",
+        "exam_date",
+        "examination_type",
+        "health_classification",
+        "vaccinated",
+        "vaccine_name",
+        "status",
     )
     list_filter = (
-        "year", "gender", "department", "exam_type", "health_classification",
+        "year",
+        "status",
+        "examination_type",
+        "health_classification",
+        "employee__department",
     )
-    search_fields = ("ma_nv", "full_name")
-    readonly_fields = ("created_at", "updated_at", "conclusion_display")
-    ordering = ("-year", "full_name")
+    search_fields = ("employee__full_name", "vaccine_name", "clinic_name")
+    autocomplete_fields = ("employee",)
+    date_hierarchy = "exam_date"
+    ordering = ("-year", "employee__full_name")
+    readonly_fields = ("created_at", "updated_at")
 
     fieldsets = (
-        ("Thông tin cá nhân", {
-            "fields": ("ma_nv", "stt", "full_name", "birth_year", "gender")
+        ("Thông tin cơ bản", {
+            "fields": ("employee", "year", "exam_date", "examination_type", "clinic_name")
         }),
-        ("Công việc", {
-            "fields": ("job_title", "position", "department")
-        }),
-        ("Tiêm chủng", {
-            "fields": ("vaccinated_influvac", "vaccinated_vaxigrip", "vaccination_date")
-        }),
-        ("Khám sức khoẻ", {
-            "fields": ("year", "exam_date", "exam_type", "clinic_name")
-        }),
-        ("Số đo", {
+        ("Chỉ số đo", {
             "fields": ("height_cm", "weight_kg", "blood_pressure")
         }),
-        ("Kết quả", {
-            "fields": ("health_classification", "conclusion_display", "conclusion_text")
+        ("Tiêm chủng", {
+            "fields": ("vaccinated", "vaccine_name", "vaccination_date")
         }),
-        ("Khác", {
-            "fields": ("group", "note", "result_file", "created_at", "updated_at")
+        ("Kết quả & phân loại", {
+            "fields": ("health_classification", "conclusion_text", "status")
+        }),
+        ("Tệp & thông tin thêm", {
+            "fields": ("result_file", "group", "note", "created_at", "updated_at")
         }),
     )
-    class Media:
-        js = ("health_records/admin_auto_conclusion.js",)
-
-    def conclusion_display(self, obj):
-        """Hiển thị kết luận tự động trong admin (readonly)."""
-        return obj.conclusion
-    conclusion_display.short_description = "Kết luận tự động"
-
