@@ -1,0 +1,27 @@
+{% extends 'health_records/base.html' %}
+{% block title %}Import nhân viên{% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+  <h3 class="mb-4">📥 Import danh sách nhân viên từ Excel</h3>
+
+  <div class="card p-4 shadow-sm">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Chọn file Excel (.xlsx)</label>
+        <input type="file" name="file" accept=".xls,.xlsx" class="form-control" required>
+        <small class="text-muted">
+          File phải có: Mã nhân viên, Họ và tên, Năm sinh, Giới tính, Chức danh nghề nghiệp, Chức vụ, Khoa/Phòng
+        </small>
+      </div>
+      <div class="d-flex gap-3">
+        <a href="{% url 'download_sample_employee' %}" class="btn btn-outline-info">📄 Tải file mẫu</a>
+        <button class="btn btn-outline-success" type="submit">📤 Import</button>
+        <a href="{% url 'employee_list' %}" class="btn btn-outline-secondary">⬅ Quay lại</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

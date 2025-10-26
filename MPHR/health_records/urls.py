@@ -41,4 +41,8 @@ urlpatterns = [
      # === Import excel ===
     path('import-excel/', views.healthrecord_import, name='healthrecord_import'),
     path('download-sample/', views.download_sample_healthrecord, name='download_sample_healthrecord'),
+    path("employees/import/", views.employee_import, name="employee_import"),
+    path("employees/import/sample/", views.download_sample_employee, name="download_sample_employee"),
+
+
 ]

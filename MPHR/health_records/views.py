@@ -66,29 +66,67 @@ def get_health_report_data():
     }
 
 # ========== NHÂN VIÊN ==========
+
 def employee_list(request):
-    employees = Employee.objects.all().order_by('name')
+    employees = Employee.objects.select_related('department').order_by('full_name')
     return render(request, 'health_records/employee_list.html', {'employees': employees})
 
+
 def employee_add(request):
+    departments = Department.objects.all()
     if request.method == 'POST':
-        name = request.POST.get('name')
-        if name:
-            Employee.objects.create(name=name)
+        code = request.POST.get('code')
+        full_name = request.POST.get('full_name')
+        birth_year = request.POST.get('birth_year') or None
+        gender = request.POST.get('gender') or None
+        job_title = request.POST.get('job_title')
+        position = request.POST.get('position')
+        dept_id = request.POST.get('department')
+
+        if code and full_name:
+            department = Department.objects.filter(id=dept_id).first()
+            Employee.objects.create(
+                code=code,
+                full_name=full_name,
+                birth_year=birth_year,
+                gender=gender,
+                job_title=job_title,
+                position=position,
+                department=department
+            )
             messages.success(request, "Đã thêm Nhân viên.")
             return redirect('employee_list')
-    return render(request, 'health_records/employee_form.html', {'title': 'Thêm Nhân viên'})
+
+    return render(request, 'health_records/employee_form.html', {
+        'title': 'Thêm Nhân viên',
+        'departments': departments
+    })
+
 
 def employee_edit(request, pk):
     emp = get_object_or_404(Employee, pk=pk)
+    departments = Department.objects.all()
+
     if request.method == 'POST':
-        name = request.POST.get('name')
-        if name:
-            emp.name = name
-            emp.save()
-            messages.success(request, "Đã cập nhật Nhân viên.")
-            return redirect('employee_list')
-    return render(request, 'health_records/employee_form.html', {'title': 'Chỉnh sửa Nhân viên', 'object': emp})
+        emp.code = request.POST.get('code')
+        emp.full_name = request.POST.get('full_name')
+        emp.birth_year = request.POST.get('birth_year') or None
+        emp.gender = request.POST.get('gender') or None
+        emp.job_title = request.POST.get('job_title')
+        emp.position = request.POST.get('position')
+        dept_id = request.POST.get('department')
+        emp.department = Department.objects.filter(id=dept_id).first()
+        emp.save()
+
+        messages.success(request, "Đã cập nhật Nhân viên.")
+        return redirect('employee_list')
+
+    return render(request, 'health_records/employee_form.html', {
+        'title': 'Chỉnh sửa Nhân viên',
+        'employee': emp,
+        'departments': departments
+    })
+
 
 def employee_delete(request, pk):
     emp = get_object_or_404(Employee, pk=pk)
@@ -96,7 +134,11 @@ def employee_delete(request, pk):
         emp.delete()
         messages.success(request, "Đã xoá Nhân viên.")
         return redirect('employee_list')
-    return render(request, 'health_records/confirm_delete.html', {'object': emp, 'type': 'Nhân viên'})
+    return render(request, 'health_records/confirm_delete.html', {
+        'object': emp,
+        'type': 'Nhân viên'
+    })
+
 
 # ========== DANH MỤC CƠ BẢN ==========
 
@@ -304,5 +346,63 @@ def healthrecord_import(request):
     return render(request, 'health_records/healthrecord_import.html', {'title': 'Import hồ sơ sức khỏe từ Excel'})
 
 def download_sample_healthrecord(request):
-    file_path = os.path.join(settings.BASE_DIR, 'static', 'samples', 'mau_import.xlsx')
-    return FileResponse(open(file_path, 'rb'), as_attachment=True, filename='mau_import.xlsx')
+    file_path = os.path.join(settings.BASE_DIR, 'static', 'samples', 'mau_import_hssk.xlsx')
+    return FileResponse(open(file_path, 'rb'), as_attachment=True, filename='mau_import_hssk.xlsx')
+
+# ========== IMPORT NHÂN VIÊN ==========
+
+def employee_import(request):
+    if request.method == 'POST' and request.FILES.get('file'):
+        file = request.FILES['file']
+        df = pd.read_excel(file)
+        missing_departments = []
+        count_created = 0
+        count_updated = 0
+
+        for _, row in df.iterrows():
+            code = str(row.get('Mã nhân viên')).strip() if row.get('Mã nhân viên') else None
+            full_name = str(row.get('Họ và tên')).strip() if row.get('Họ và tên') else None
+
+            if not code or not full_name:
+                continue  # bỏ qua dòng thiếu dữ liệu cơ bản
+
+            dept_name = str(row.get('Khoa/Phòng')).strip() if row.get('Khoa/Phòng') else None
+            department = Department.objects.filter(name=dept_name).first()
+
+            if dept_name and not department:
+                missing_departments.append(dept_name)
+                continue  # không import nếu khoa/phòng chưa khai báo
+
+            gender = str(row.get('Giới tính')).strip().capitalize() if row.get('Giới tính') else None
+            if gender not in ['Nam','Nữ', None]:
+                gender = None  # loại bỏ giới tính không hợp lệ
+
+            obj, created = Employee.objects.update_or_create(
+                code=code,
+                defaults={
+                    'full_name': full_name,
+                    'birth_year': row.get('Năm sinh') or None,
+                    'gender': gender,
+                    'job_title': row.get('Chức danh nghề nghiệp'),
+                    'position': row.get('Chức vụ'),
+                    'department': department
+                }
+            )
+
+            if created:
+                count_created += 1
+            else:
+                count_updated += 1
+
+        if missing_departments:
+            missing = ", ".join(set(missing_departments))
+            messages.warning(request, f"Các khoa/phòng chưa tồn tại nên bỏ qua: {missing}")
+
+        messages.success(request, f"Import thành công: {count_created} thêm mới, {count_updated} cập nhật.")
+        return redirect('employee_list')
+
+    return render(request, 'health_records/employee_import.html', {'title': 'Import danh sách nhân viên'})
+
+def download_sample_employee(request):
+    file_path = os.path.join(settings.BASE_DIR, 'static', 'samples', 'mau_import_nv.xlsx')
+    return FileResponse(open(file_path, 'rb'), as_attachment=True, filename='mau_import_nv.xlsx')

@@ -1,0 +1,102 @@
+{% extends 'health_records/base.html' %}
+{% block title %}Chi tiết hồ sơ sức khoẻ{% endblock %}
+{% block content %}
+<div class="container mt-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>📋 Hồ sơ sức khoẻ của {{ record.employee.full_name }} ({{ record.year }})</h3>
+    <a href="{% url 'healthrecord_list' %}" class="btn btn-secondary">⬅ Quay lại danh sách</a>
+  </div>
+
+  <!-- THÔNG TIN NHÂN VIÊN -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white fw-bold">Thông tin nhân viên</div>
+    <div class="card-body p-0">
+      <table class="table table-bordered mb-0">
+        <tr><th class="w-25">Mã nhân viên</th><td>{{ record.employee.code }}</td></tr>
+        <tr><th>Họ và tên</th><td>{{ record.employee.full_name }}</td></tr>
+        <tr><th>Năm sinh</th><td>{{ record.employee.birth_year }}</td></tr>
+        <tr><th>Giới tính</th><td>{{ record.employee.gender }}</td></tr>
+        <tr><th>Chức danh nghề nghiệp</th><td>{{ record.employee.job_title }}</td></tr>
+        <tr><th>Chức vụ</th><td>{{ record.employee.position }}</td></tr>
+        <tr><th>Khoa/Phòng</th><td>{{ record.employee.department }}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- THÔNG TIN KHÁM -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-success text-white fw-bold">Thông tin khám</div>
+    <div class="card-body p-0">
+      <table class="table table-bordered mb-0">
+        <tr><th class="w-25">Năm khám</th><td>{{ record.year }}</td></tr>
+        <tr><th>Ngày khám</th><td>{{ record.exam_date|date:"d/m/Y" }}</td></tr>
+        <tr><th>Loại khám</th><td>{{ record.examination_type }}</td></tr>
+        <tr><th>Cơ sở khám</th><td>{{ record.clinic_name }}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- SỐ ĐO & HUYẾT ÁP -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-info text-white fw-bold">Chỉ số đo được</div>
+    <div class="card-body p-0">
+      <table class="table table-bordered mb-0">
+        <tr><th class="w-25">Chiều cao (cm)</th><td>{{ record.height_cm }}</td></tr>
+        <tr><th>Cân nặng (kg)</th><td>{{ record.weight_kg }}</td></tr>
+        <tr><th>Huyết áp (mmHg)</th><td>{{ record.blood_pressure }}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- VACCINE -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-warning fw-bold">Thông tin tiêm chủng</div>
+    <div class="card-body p-0">
+      <table class="table table-bordered mb-0">
+        <tr><th class="w-25">Đã tiêm vắc-xin</th><td>{{ record.vaccinated|yesno:"Có,Không" }}</td></tr>
+        {% if record.vaccinated %}
+        <tr><th>Tên vắc-xin</th><td>{{ record.vaccine_name }}</td></tr>
+        <tr><th>Ngày tiêm chủng</th><td>{{ record.vaccination_date|date:"d/m/Y" }}</td></tr>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+
+  <!-- KẾT QUẢ -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-secondary text-white fw-bold">Kết quả & Phân loại</div>
+    <div class="card-body p-0">
+      <table class="table table-bordered mb-0">
+        <tr><th class="w-25">Phân loại sức khoẻ</th><td>{{ record.health_classification }}</td></tr>
+        <tr><th>Kết luận</th><td>{{ record.conclusion }}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- KHÁC -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-dark text-white fw-bold">Thông tin khác</div>
+    <div class="card-body p-0">
+      <table class="table table-bordered mb-0">
+        <tr>
+          <th class="w-25">File kết quả</th>
+          <td>
+            {% if record.result_file %}
+              <a href="{{ record.result_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                📄 Xem file
+              </a>
+            {% else %}
+              <span class="text-muted">Chưa có file</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr><th>Ghi chú</th><td>{{ record.note|default:"—" }}</td></tr>
+        <tr><th>Ngày tạo</th><td>{{ record.created_at|date:"d/m/Y H:i" }}</td></tr>
+        <tr><th>Cập nhật gần nhất</th><td>{{ record.updated_at|date:"d/m/Y H:i" }}</td></tr>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

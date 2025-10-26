@@ -38,8 +38,8 @@
           <td>{{ r.employee.full_name }}</td>
           <td class="text-center">{{ r.year }}</td>
           <td class="text-center">{{ r.health_classification|default:"—" }}</td>
-          <td>{{ r.examination_type|default:"—" }}</td>
-          <td>{{ r.employee.department|default:"—" }}</td>
+          <td class="text-center">{{ r.examination_type|default:"—" }}</td>
+          <td class="text-center">{{ r.employee.department|default:"—" }}</td>
           <td class="text-center">
             {% if r.status == "done" %}
               <span class="badge bg-success">Đã khám</span>
@@ -48,9 +48,9 @@
             {% endif %}
           </td>
           <td class="text-center">
-            <a href="{% url 'record_detail' r.pk %}" class="btn btn-sm btn-outline-info">👁 Xem</a>
-            <a href="{% url 'record_edit' r.pk %}" class="btn btn-sm btn-outline-primary">✏ Sửa</a>
-            <a href="{% url 'record_delete' r.pk %}" class="btn btn-sm btn-outline-danger"
+            <a href="{% url 'healthrecord_detail' r.pk %}" class="btn btn-sm btn-outline-info">👁 Xem</a>
+            <a href="{% url 'healthrecord_edit' r.pk %}" class="btn btn-sm btn-outline-primary">✏ Sửa</a>
+            <a href="{% url 'healthrecord_delete' r.pk %}" class="btn btn-sm btn-outline-danger"
                onclick="return confirm('Bạn chắc chắn muốn xóa hồ sơ này?')">🗑 Xóa</a>
           </td>
         </tr>

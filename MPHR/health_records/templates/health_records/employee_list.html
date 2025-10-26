@@ -1,0 +1,58 @@
+{% extends 'health_records/base.html' %}
+{% block title %}Danh sách Nhân viên{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Danh sách nhân viên</h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'employee_add' %}" class="btn btn-success d-flex align-items-center px-3">
+      <i class="bi bi-plus-circle me-2"></i> Thêm nhân viên
+    </a>
+    <a href="{% url 'employee_import' %}" class="btn btn-outline-primary d-flex align-items-center px-3">
+      <i class="bi bi-upload me-2"></i> Import nhân viên
+    </a>
+  </div>
+</div>
+
+<div class="container mt-4">
+  
+  <table class="table table-bordered">
+    <thead class="table-primary text-center">
+      <tr>
+        <th>STT</th>
+        <th>Mã NV</th>
+        <th>Họ và tên</th>
+        <th>Năm sinh</th>
+        <th>Giới tính</th>
+        <th>Chức danh nghề nghiệp</th>
+        <th>Chức vụ</th>
+        <th>Khoa/Phòng</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in employees %}
+      <tr>
+        <td class="text-center">{{ forloop.counter }}</td>
+        <td>{{ e.code }}</td>
+        <td>{{ e.full_name }}</td>
+        <td class="text-center">{{ e.birth_year|default:"—" }}</td>
+        <td class="text-center">{{ e.gender|default:"—" }}</td>
+        <td class="text-center">{{ e.job_title|default:"—" }}</td>
+        <td class="text-center">{{ e.position|default:"—" }}</td>
+        <td class="text-center">{{ e.department|default:"—" }}</td>
+        <td class="text-center">
+          <a href="{% url 'employee_edit' e.id %}" class="btn btn-sm btn-primary">Sửa</a>
+          <a href="{% url 'employee_delete' e.id %}" class="btn btn-sm btn-danger">Xoá</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="9" class="text-center text-muted">Chưa có dữ liệu</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

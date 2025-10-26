@@ -1,0 +1,70 @@
+{% extends 'health_records/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+  <h3 class="mb-3">{{ title }}</h3>
+
+  <form method="post" class="card p-4 shadow-sm">
+    {% csrf_token %}
+    <div class="row g-3">
+
+      <div class="col-md-4">
+        <label class="form-label">Mã nhân viên</label>
+        <input type="text" name="code" class="form-control"
+               value="{{ employee.code|default:'' }}" required>
+      </div>
+
+      <div class="col-md-8">
+        <label class="form-label">Họ và tên</label>
+        <input type="text" name="full_name" class="form-control"
+               value="{{ employee.full_name|default:'' }}" required>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Năm sinh</label>
+        <input type="number" name="birth_year" class="form-control"
+               value="{{ employee.birth_year|default:'' }}">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Giới tính</label>
+        <select name="gender" class="form-select">
+          <option value="" {% if not employee.gender %}selected{% endif %}>—</option>
+          <option value="Nam" {% if employee.gender == "Nam" %}selected{% endif %}>Nam</option>
+          <option value="Nữ" {% if employee.gender == "Nữ" %}selected{% endif %}>Nữ</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Khoa/Phòng</label>
+        <select name="department" class="form-select">
+          <option value="">— Chọn khoa/phòng —</option>
+          {% for d in departments %}
+            <option value="{{ d.id }}" {% if employee.department.id == d.id %}selected{% endif %}>{{ d.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Chức danh nghề nghiệp</label>
+        <input type="text" name="job_title" class="form-control"
+               value="{{ employee.job_title|default:'' }}">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Chức vụ</label>
+        <input type="text" name="position" class="form-control"
+               value="{{ employee.position|default:'' }}">
+      </div>
+
+    </div>
+
+    <div class="mt-4 d-flex justify-content-between">
+      <a href="{% url 'employee_list' %}" class="btn btn-secondary">⬅ Quay lại</a>
+      <button type="submit" class="btn btn-success">💾 Lưu</button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
