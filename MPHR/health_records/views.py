@@ -355,53 +355,73 @@ def employee_import(request):
     if request.method == 'POST' and request.FILES.get('file'):
         file = request.FILES['file']
         df = pd.read_excel(file)
-        missing_departments = []
-        count_created = 0
-        count_updated = 0
 
-        for _, row in df.iterrows():
-            code = str(row.get('Mã nhân viên')).strip() if row.get('Mã nhân viên') else None
-            full_name = str(row.get('Họ và tên')).strip() if row.get('Họ và tên') else None
+        for index, row in df.iterrows():
+            emp_code = row.get('Mã nhân viên')
+            full_name = row.get('Họ và tên')
 
-            if not code or not full_name:
-                continue  # bỏ qua dòng thiếu dữ liệu cơ bản
+            # Validate bắt buộc
+            if pd.isna(emp_code) or pd.isna(full_name):
+                return render(request, 'health_records/employee_import.html', {
+                    'title': 'Import danh sách nhân viên',
+                    'error': f"❌ Dòng {index+2}: Thiếu mã nhân viên hoặc họ tên."
+                })
 
-            dept_name = str(row.get('Khoa/Phòng')).strip() if row.get('Khoa/Phòng') else None
-            department = Department.objects.filter(name=dept_name).first()
+            emp_code = str(emp_code).strip()
+            full_name = str(full_name).strip()
 
-            if dept_name and not department:
-                missing_departments.append(dept_name)
-                continue  # không import nếu khoa/phòng chưa khai báo
+            # Kiểm tra Khoa/Phòng
+            dept_name = row.get('Khoa/Phòng')
+            if pd.isna(dept_name):
+                department = None
+            else:
+                dept_name = str(dept_name).strip()
+                department = Department.objects.filter(name=dept_name).first()
+                if not department:
+                    return render(request, 'health_records/employee_import.html', {
+                        'title': 'Import danh sách nhân viên',
+                        'error': f"❌ Dòng {index+2}: Khoa/Phòng '{dept_name}' chưa tồn tại trong hệ thống."
+                    })
 
-            gender = str(row.get('Giới tính')).strip().capitalize() if row.get('Giới tính') else None
-            if gender not in ['Nam','Nữ', None]:
-                gender = None  # loại bỏ giới tính không hợp lệ
+            # Giới tính
+            gender = row.get('Giới tính')
+            if pd.isna(gender):
+                gender = None
+            else:
+                gender = str(gender).strip().capitalize()
+                if gender not in ['Nam', 'Nữ']:
+                    gender = None
 
-            obj, created = Employee.objects.update_or_create(
-                code=code,
+            # Các ô optional
+            birth_year = row.get('Năm sinh')
+            birth_year = None if pd.isna(birth_year) else int(birth_year)
+
+            job_title = row.get('Chức danh nghề nghiệp')
+            job_title = None if pd.isna(job_title) else str(job_title).strip()
+
+            position = row.get('Chức vụ')
+            position = None if pd.isna(position) else str(position).strip()
+
+            # Tạo hoặc cập nhật
+            Employee.objects.update_or_create(
+                code=emp_code,
                 defaults={
                     'full_name': full_name,
-                    'birth_year': row.get('Năm sinh') or None,
+                    'birth_year': birth_year,
                     'gender': gender,
-                    'job_title': row.get('Chức danh nghề nghiệp'),
-                    'position': row.get('Chức vụ'),
-                    'department': department
+                    'job_title': job_title,
+                    'position': position,
+                    'department': department,
                 }
             )
 
-            if created:
-                count_created += 1
-            else:
-                count_updated += 1
-
-        if missing_departments:
-            missing = ", ".join(set(missing_departments))
-            messages.warning(request, f"Các khoa/phòng chưa tồn tại nên bỏ qua: {missing}")
-
-        messages.success(request, f"Import thành công: {count_created} thêm mới, {count_updated} cập nhật.")
+        messages.success(request, "✅ Import thành công danh sách nhân viên.")
         return redirect('employee_list')
 
-    return render(request, 'health_records/employee_import.html', {'title': 'Import danh sách nhân viên'})
+    return render(request, 'health_records/employee_import.html', {
+        'title': 'Import danh sách nhân viên'
+    })
+
 
 def download_sample_employee(request):
     file_path = os.path.join(settings.BASE_DIR, 'static', 'samples', 'mau_import_nv.xlsx')

@@ -5,14 +5,19 @@
 <div class="container mt-4">
   <h3 class="mb-4">📥 Import danh sách nhân viên từ Excel</h3>
 
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
   <div class="card p-4 shadow-sm">
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="mb-3">
         <label class="form-label fw-semibold">Chọn file Excel (.xlsx)</label>
-        <input type="file" name="file" accept=".xls,.xlsx" class="form-control" required>
+        <input type="file" name="file" accept=".xlsx,.xls" class="form-control" required>
         <small class="text-muted">
-          File phải có: Mã nhân viên, Họ và tên, Năm sinh, Giới tính, Chức danh nghề nghiệp, Chức vụ, Khoa/Phòng
+          File phải có các cột: Mã nhân viên, Họ và tên, Năm sinh, Giới tính,
+          Chức danh nghề nghiệp, Chức vụ, Khoa/Phòng
         </small>
       </div>
       <div class="d-flex gap-3">
@@ -25,3 +30,4 @@
 </div>
 
 {% endblock %}
+
