@@ -12,7 +12,7 @@
   <tbody>
     {% for e in examinationtypes %}
     <tr>
-      <td>{{ forloop.counter }}</td>
+      <td class="text-center">{{ forloop.counter }}</td>
       <td>{{ e.name }}</td>
       <td class="text-center">
         <a href="{% url 'examinationtype_edit' e.id %}" class="btn btn-sm btn-primary">Sửa</a>

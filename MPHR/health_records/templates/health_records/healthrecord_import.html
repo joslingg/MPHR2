@@ -1,40 +1,135 @@
 {% extends 'health_records/base.html' %}
-{% block title %}Import hồ sơ sức khoẻ{% endblock %}
-{% block content %}
+{% block title %}Import hồ sơ sức khỏe{% endblock %}
 
+{% block content %}
 <div class="container mt-4">
-  <h3 class="text-center mb-4">📥 Nhập hồ sơ sức khỏe từ Excel</h3>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">📤 Import hồ sơ sức khỏe</h3>
+    <a href="{% url 'healthrecord_list' %}" class="btn btn-secondary">⬅ Quay lại</a>
+  </div>
 
   <div class="card shadow-sm p-4">
-    <form method="post" enctype="multipart/form-data">
+    <form id="importForm" method="post" enctype="multipart/form-data" action="#">
       {% csrf_token %}
-
       <div class="mb-3">
-        <label class="form-label fw-semibold">Chọn tệp Excel (.xls, .xlsx)</label>
-        <input type="file" name="file" accept=".xls,.xlsx" class="form-control" required>
-        <small class="text-muted">
-          File phải có các cột: Mã nhân viên, Họ và tên, Năm sinh, Giới tính,
-          Chức danh nghề nghiệp, Chức vụ, Khoa/Phòng, Đã tiêm vắc-xin, Tên vắc-xin,
-          Ngày tiêm chủng, Năm khám, Ngày khám, Loại khám, Cơ sở khám, Chiều cao (cm),
-          Cân nặng (kg), Huyết áp (mmHg), Phân loại sức khoẻ, Kết luận, Nhóm, Ghi chú, File PDF
-        </small>
+        <label class="form-label fw-semibold">Chọn file Excel (.xlsx):</label>
+        <input type="file" name="file" id="fileInput" accept=".xlsx" class="form-control" required>
       </div>
 
-      <div class="d-flex gap-3">
-        <a href="{% url 'download_sample_healthrecord' %}" class="btn btn-info">📄 Tải file mẫu</a>
-        <button type="submit" class="btn btn-success">📤 Import</button>
-        <a href="{% url 'healthrecord_list' %}" class="btn btn-secondary">⬅ Quay lại</a>
+      <div class="d-flex justify-content-end gap-2">
+        <a href="{% url 'download_sample_healthrecord' %}" class="btn btn-outline-info">
+          📄 Tải file mẫu
+        </a>
+        <button type="submit" class="btn btn-primary">
+          📥 Import & Xem trước
+        </button>
       </div>
     </form>
   </div>
 
-  {% if messages %}
-    <div class="mt-3">
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-      {% endfor %}
-    </div>
-  {% endif %}
+  <!-- Kết quả preview sẽ hiển thị ở đây -->
+  <div id="preview-area" class="mt-4"></div>
 </div>
-
 {% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('importForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const fileInput = document.getElementById('fileInput');
+  if (!fileInput.files.length) {
+    alert('Vui lòng chọn file Excel.');
+    return;
+  }
+
+  fetch("{% url 'healthrecord_import_preview_ajax' %}", {
+    method: "POST",
+    body: formData,
+    headers: { "X-CSRFToken": getCookie("csrftoken") },
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) {
+      alert("Lỗi: " + data.error);
+    } else {
+      document.getElementById("preview-area").innerHTML = data.html;
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Lỗi hệ thống khi đọc file.");
+  });
+});
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === name + "=") {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+// CSRF helper
+function getCookie(name){
+  let v=null;
+  if(document.cookie){
+    document.cookie.split(';').forEach(c=>{
+      const [k,val]=c.trim().split('=');
+      if(k===name) v=decodeURIComponent(val);
+    });
+  }
+  return v;
+}
+
+// SAVE
+function submitHealthImport(batch_id){
+  if(!confirm("Bạn có chắc muốn lưu tất cả dữ liệu hợp lệ?")) return;
+
+  fetch(`/records/import/submit/${batch_id}/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.success){
+      alert("Đã lưu thành công!");
+      document.getElementById("preview-area").innerHTML = "";
+    } else {
+      alert("Lỗi lưu: " + (d.error || ""));
+    }
+  });
+}
+
+// CANCEL — Chính xác 100% chạy
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('[data-action="cancel-import"]');
+  if(!btn) return;
+
+  const batch = btn.dataset.batch;
+  if(!confirm("Bạn có muốn huỷ batch import này?")) return;
+
+  fetch(`/records/import/cancel/${batch}/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.success){
+      alert("Đã huỷ batch import.");
+      document.getElementById("preview-area").innerHTML = "";
+    } else {
+      alert("Huỷ thất bại: " + (d.error || ""));
+    }
+  })
+  .catch(err => alert("Lỗi hệ thống khi huỷ."));
+});
+</script>
+{% endblock %}
+

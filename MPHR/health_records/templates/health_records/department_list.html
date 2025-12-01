@@ -12,7 +12,7 @@
   <tbody>
     {% for d in departments %}
     <tr>
-      <td>{{ forloop.counter }}</td>
+      <td class="text-center">{{ forloop.counter }}</td>
       <td>{{ d.name }}</td>
       <td class="text-center">
         <a href="{% url 'department_edit' d.id %}" class="btn btn-sm btn-primary">Sửa</a>

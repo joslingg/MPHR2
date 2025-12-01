@@ -1,5 +1,6 @@
 {% extends 'health_records/base.html' %}
 {% block title %}Danh sách Nhân viên{% endblock %}
+
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -14,42 +15,87 @@
   </div>
 </div>
 
+<!-- 🔍 Bộ lọc tìm kiếm -->
+  <form method="get" class="card p-3 mb-4 shadow-sm">
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input type="text" name="q" value="{{ search_query }}" class="form-control"
+               placeholder="🔍 Tìm theo mã hoặc tên nhân viên...">
+      </div>
+
+      <div class="col-md-3">
+        <select name="department" class="form-select">
+          <option value="">-- Tất cả Khoa/Phòng --</option>
+          {% for dept in departments %}
+            <option value="{{ dept.id }}" {% if dept.id|stringformat:"s" == selected_department %}selected{% endif %}>
+              {{ dept.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <select name="job_title" class="form-select">
+          <option value="">-- Tất cả Chức danh --</option>
+          {% for title in job_titles %}
+            <option value="{{ title }}" {% if title == selected_job_title %}selected{% endif %}>{{ title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2 text-end">
+        <button type="submit" class="btn btn-primary w-100">Lọc</button>
+      </div>
+    </div>
+  </form>
+
 <div class="container mt-4">
   
-  <table class="table table-bordered">
-    <thead class="table-primary text-center">
+  <table class="table table-striped align-middle shadow-sm">
+    <thead class="table-light text-center">
       <tr>
-        <th>STT</th>
-        <th>Mã NV</th>
-        <th>Họ và tên</th>
-        <th>Năm sinh</th>
-        <th>Giới tính</th>
-        <th>Chức danh nghề nghiệp</th>
-        <th>Chức vụ</th>
+        <th>
+          <a href="?sort=code&dir={% if sort == 'code' and dir == 'asc' %}desc{% else %}asc{% endif %}&q={{ search_query }}&department={{ selected_department }}&job_title={{ selected_job_title }}">
+            Mã NV {% if sort == "code" %}{% if dir == "asc" %}▲{% else %}▼{% endif %}{% endif %}
+          </a>
+        </th>
+        <th>
+          <a href="?sort=full_name&dir={% if sort == 'full_name' and dir == 'asc' %}desc{% else %}asc{% endif %}&q={{ search_query }}&department={{ selected_department }}&job_title={{ selected_job_title }}">
+            Họ và tên {% if sort == "full_name" %}{% if dir == "asc" %}▲{% else %}▼{% endif %}{% endif %}
+          </a>
+        </th>
         <th>Khoa/Phòng</th>
-        <th></th>
+        <th>Giới tính</th>
+        <th>Năm sinh</th>
+        <th>Chức danh</th>
+        <th>Chức vụ</th>
+        <th class="text-center">Thao tác</th>
       </tr>
     </thead>
     <tbody>
-      {% for e in employees %}
-      <tr>
-        <td class="text-center">{{ forloop.counter }}</td>
-        <td>{{ e.code }}</td>
-        <td>{{ e.full_name }}</td>
-        <td class="text-center">{{ e.birth_year|default:"—" }}</td>
-        <td class="text-center">{{ e.gender|default:"—" }}</td>
-        <td class="text-center">{{ e.job_title|default:"—" }}</td>
-        <td class="text-center">{{ e.position|default:"—" }}</td>
-        <td class="text-center">{{ e.department|default:"—" }}</td>
-        <td class="text-center">
-          <a href="{% url 'employee_edit' e.id %}" class="btn btn-sm btn-primary">Sửa</a>
-          <a href="{% url 'employee_delete' e.id %}" class="btn btn-sm btn-danger">Xoá</a>
-        </td>
-      </tr>
+      {% for emp in employees %}
+        <tr>
+          <td class="text-center">{{ emp.code }}</td>
+          <td>{{ emp.full_name }}</td>
+          <td class="text-center">
+            {% if emp.department %}
+              {{ emp.department.name }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+
+          <td class="text-center">{{ emp.gender }}</td>
+          <td class="text-center">{{ emp.birth_year }}</td>
+          <td class="text-center">{{ emp.job_title }}</td>
+          <td class="text-center">{{ emp.position }}</td>
+          <td class="text-center">
+            <a href="{% url 'employee_edit' emp.id %}" class="btn btn-sm btn-outline-warning">✏️</a>
+            <a href="{% url 'employee_delete' emp.id %}" class="btn btn-sm btn-outline-danger">🗑️</a>
+          </td>
+        </tr>
       {% empty %}
-      <tr>
-        <td colspan="9" class="text-center text-muted">Chưa có dữ liệu</td>
-      </tr>
+        <tr><td colspan="8" class="text-center text-muted">Không tìm thấy nhân viên nào.</td></tr>
       {% endfor %}
     </tbody>
   </table>

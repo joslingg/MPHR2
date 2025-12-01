@@ -1,9 +1,9 @@
 {% extends 'health_records/base.html' %}
-{% block title %}Danh sách hồ sơ{% endblock %}
-{% block content %}
+{% block title %}Danh sách Hồ sơ sức khỏe{% endblock %}
 
+{% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h3 class="mb-0">Danh sách hồ sơ khám sức khoẻ</h3>
+  <h3 class="mb-0">Danh sách hồ sơ sức khỏe</h3>
   <div class="d-flex gap-2">
     <a href="{% url 'healthrecord_add' %}" class="btn btn-success d-flex align-items-center px-3">
       <i class="bi bi-plus-circle me-2"></i> Thêm hồ sơ
@@ -14,52 +14,144 @@
   </div>
 </div>
 
-  {% if records %}
-  <div class="table-responsive">
-    <table class="table table-bordered table-striped align-middle">
-      <thead class="table-light">
-        <tr class="text-center">
-          <th>#</th>
-          <th>Mã NV</th>
-          <th>Họ và tên</th>
-          <th>Năm</th>
-          <th>Phân loại</th>
-          <th>Loại khám</th>
-          <th>Khoa/Phòng</th>
-          <th>Trạng thái</th>
-          <th>Hành động</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in records %}
+<!-- 🔍 Bộ lọc tìm kiếm (theo mẫu nhân viên) -->
+<form method="get" class="card p-3 mb-4 shadow-sm">
+  <div class="row g-2">
+    <div class="col-md-4">
+      <input type="text" name="q" value="{{ filter_q|default:'' }}" class="form-control"
+             placeholder="🔍 Tìm theo mã NV hoặc tên nhân viên...">
+    </div>
+
+    <div class="col-md-2">
+      <select name="year" class="form-select">
+        <option value="">-- Tất cả năm --</option>
+        {% for y in years %}
+          <option value="{{ y }}" {% if y|stringformat:"s" == filter_year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <select name="classification" class="form-select">
+        <option value="">--Tất cả phân loại--</option>
+        {% for hc in health_classes %}
+          <option value="{{ hc.id }}" {% if filter_hc|stringformat:"s" == hc.id|stringformat:"s" %}selected{% endif %}>
+            {{ hc.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <select name="conclusion" class="form-select">
+        <option value="">--Tất cả kết luận--</option>
+        {% for c in conclusions %}
+          <option value="{{ c|escape }}" {% if filter_conclusion == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <select name="vaccinated" class="form-select">
+        <option value="">-- Tiêm vắc-xin --</option>
+        <option value="yes" {% if filter_vaccinated == "yes" %}selected{% endif %}>Đã tiêm</option>
+        <option value="no" {% if filter_vaccinated == "no" %}selected{% endif %}>Chưa tiêm</option>
+      </select>
+    </div>
+
+    <div class="col-md-2 text-end">
+      <button type="submit" class="btn btn-primary w-100">Lọc</button>
+    </div>
+  </div>
+</form>
+
+<div class="container mt-2">
+  <table class="table table-striped align-middle shadow-sm">
+    <thead class="table-light text-center">
+      <tr>
+        <th>Mã NV</th>
+        <th>Họ và tên</th>
+        <th>Khoa/Phòng</th>
+        <th>Năm</th>
+        <th>Ngày khám</th>
+        <th>Phân loại</th>
+        <th>Kết luận</th>
+        <th>Tiêm vắc-xin</th>
+        <th class="text-center">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
         <tr>
-          <td class="text-center">{{ forloop.counter }}</td>
-          <td>{{ r.employee.code }}</td>
+          <td class="text-center">{{ r.employee.code }}</td>
           <td>{{ r.employee.full_name }}</td>
-          <td class="text-center">{{ r.year }}</td>
-          <td class="text-center">{{ r.health_classification|default:"—" }}</td>
-          <td class="text-center">{{ r.examination_type|default:"—" }}</td>
-          <td class="text-center">{{ r.employee.department|default:"—" }}</td>
           <td class="text-center">
-            {% if r.status == "done" %}
-              <span class="badge bg-success">Đã khám</span>
+            {% if r.employee.department %}
+              {{ r.employee.department.name }}
             {% else %}
-              <span class="badge bg-secondary">Không khám</span>
+              —
+            {% endif %}
+          </td>
+          <td class="text-center">{{ r.year }}</td>
+          <td class="text-center">
+            {% if r.exam_date %}
+                {{ r.exam_date|date:"d/m/Y" }}
+            {% else %}
+                —
             {% endif %}
           </td>
           <td class="text-center">
-            <a href="{% url 'healthrecord_detail' r.pk %}" class="btn btn-sm btn-outline-info">👁 Xem</a>
-            <a href="{% url 'healthrecord_edit' r.pk %}" class="btn btn-sm btn-outline-primary">✏ Sửa</a>
-            <a href="{% url 'healthrecord_delete' r.pk %}" class="btn btn-sm btn-outline-danger"
-               onclick="return confirm('Bạn chắc chắn muốn xóa hồ sơ này?')">🗑 Xóa</a>
+            {% if r.health_classification %}
+                {{ r.health_classification.name }}
+            {% else %}
+                —
+            {% endif %}
+          </td>
+          <td class="text-center">{{ r.conclusion|default:r.conclusion_text }}</td>
+          <td class="text-center">{% if r.vaccinated %}✅{% else %}—{% endif %}</td>
+          <td class="text-center">
+            <a href="{% url 'healthrecord_detail' r.id %}" class="btn btn-sm btn-outline-info">Xem</a>
+            <a href="{% url 'healthrecord_edit' r.id %}" class="btn btn-sm btn-outline-warning">Sửa</a>
+            <a href="{% url 'healthrecord_delete' r.id %}" class="btn btn-sm btn-outline-danger">Xóa</a>
           </td>
         </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      {% empty %}
+        <tr><td colspan="9" class="text-center text-muted">Không có hồ sơ nào.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Phân trang (giữ param hiện hành khi chuyển trang) -->
+  <nav aria-label="Page navigation">
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">‹</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">‹</span></li>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if num >= page_obj.number|add:'-3' and num <= page_obj.number|add:'3' %}
+          <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}{% if querystring %}&{{ querystring }}{% endif %}">{{ num }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">›</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">›</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <div class="d-flex justify-content-end mt-2 gap-2">
+    <a class="btn btn-outline-success" href="{% url 'healthrecord_export' %}?{{ request.GET.urlencode }}">📥 Xuất Excel</a>
   </div>
-  {% else %}
-  <p class="text-muted">Chưa có hồ sơ nào.</p>
-  {% endif %}
 </div>
 {% endblock %}

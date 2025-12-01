@@ -1,0 +1,109 @@
+<style>
+.preview-table-container {
+  max-height: 60vh;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+}
+.preview-table-container table thead th {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 2;
+}
+.preview-table-container tbody tr.valid-row { background-color: #eaf8f0; }
+.preview-table-container tbody tr.invalid-row { background-color: #fbeaea; }
+.preview-table-container tbody tr:hover { background-color: #f6faff; transition: background-color 0.2s; }
+.preview-table-container thead th { background-color: #247efc !important; color: #fff !important; }
+</style>
+
+<div class="card shadow-sm p-3">
+  <h5 class="mb-3">📋 Kết quả kiểm tra dữ liệu</h5>
+  
+  <div class="mb-3">
+    <span class="badge bg-primary me-2">Tổng: {{ total }}</span>
+    <span class="badge bg-success me-2">✅ Hợp lệ: {{ valid_count }}</span>
+    <span class="badge bg-danger">❌ Lỗi: {{ invalid_count }}</span>
+  </div>
+
+  <div class="preview-table-container">
+    <table class="table table-bordered table-hover align-middle mb-0">
+      <thead class="text-center">
+        <tr>
+          <th>Mã NV</th>
+          <th>Họ và tên</th>
+          <th>Năm khám</th>
+          <th>Ngày khám</th>
+          <th>Phân loại</th>
+          <th>Kết luận</th>
+          <th>Đã tiêm</th>
+          <th>Tên vắc-xin</th>
+          <th>Ghi chú / Lỗi</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for t in temps %}
+        <tr class="{% if t.is_valid %}valid-row{% else %}invalid-row{% endif %}">
+          <td class="text-center">{{ t.employee_code }}</td>
+
+          <td>{{ t.employee_name|default:"—" }}</td>
+
+          <td class="text-center">{{ t.year|default:"—" }}</td>
+
+          <td class="text-center">
+            {% if t.exam_date %}
+              {{ t.exam_date|date:"d/m/Y" }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+
+          <td class="text-center">
+            {% if t.health_classification_name %}
+              {{ t.health_classification_name }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+
+          <td>{{ t.conclusion_text|default:"—" }}</td>
+
+          <td class="text-center">
+            {% if t.vaccinated %}✅{% else %}—{% endif %}
+          </td>
+
+          <td>{{ t.vaccine_name|default:"—" }}</td>
+
+          <td>
+            {% if t.is_valid %}
+              <span class="text-success fw-bold">✓ Hợp lệ</span>
+            {% else %}
+              <span class="text-danger fw-bold">✗ {{ t.error_message }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-3 d-flex gap-3">
+    {% if all_valid %}
+      <button class="btn btn-success"
+              onclick="submitHealthImport('{{ batch_id }}')">
+        💾 Lưu vào hệ thống
+      </button>
+    {% else %}
+      <button class="btn btn-success" disabled>💾 Lưu vào hệ thống</button>
+      <small class="text-danger align-self-center">(Cần tất cả dòng hợp lệ)</small>
+    {% endif %}
+
+    <!-- Nút cancel KHÔNG dùng onclick trong partial -->
+    <button class="btn btn-outline-danger"
+            data-action="cancel-import"
+            data-batch="{{ batch_id }}">
+        ❌ Huỷ import
+    </button>
+  </div>
+</div>

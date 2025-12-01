@@ -1,4 +1,7 @@
 from django.db import models
+from django.utils import timezone
+import uuid
+
 
 
 # --- Danh mục Khoa/Phòng ---
@@ -60,6 +63,27 @@ class Employee(models.Model):
     def __str__(self):
         return f"{self.full_name} ({self.code})"
 
+# --- Dữ liệu tạm import ---
+class EmployeeTemp(models.Model):
+    batch_id = models.CharField(max_length=50, verbose_name="Mã batch", db_index=True)
+    code = models.CharField(max_length=50, verbose_name="Mã nhân viên")
+    full_name = models.CharField(max_length=200, verbose_name="Họ và tên")
+    birth_year = models.PositiveIntegerField(blank=True, null=True, verbose_name="Năm sinh")
+    gender = models.CharField(max_length=10, blank=True, null=True, verbose_name="Giới tính")
+    job_title = models.CharField(max_length=200, blank=True, null=True, verbose_name="Chức danh nghề nghiệp")
+    position = models.CharField(max_length=200, blank=True, null=True, verbose_name="Chức vụ")
+    department_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Tên khoa/phòng")
+    is_valid = models.BooleanField(default=True, verbose_name="Hợp lệ")
+    error_message = models.TextField(blank=True, null=True, verbose_name="Lỗi (nếu có)")
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "Dữ liệu tạm nhân viên"
+        verbose_name_plural = "Dữ liệu tạm nhân viên"
+        ordering = ['full_name']
+
+    def __str__(self):
+        return f"{self.full_name} ({'Hợp lệ' if self.is_valid else 'Lỗi'})"
 
 # --- Hồ sơ sức khỏe từng năm ---
 class HealthRecord(models.Model):
@@ -122,3 +146,31 @@ class HealthRecord(models.Model):
         elif name == "IV":
             return "Làm việc hợp lý"
         return ""
+
+# --- Dữ liệu tạm import hồ sơ sức khỏe ---
+class HealthRecordTemp(models.Model):
+    batch_id = models.CharField(max_length=50, db_index=True, verbose_name="Mã batch")
+    employee_code = models.CharField(max_length=50, verbose_name="Mã nhân viên")
+    employee_name = models.CharField(max_length=200, blank=True, null=True, verbose_name="Họ và tên (nếu có trong file)")
+    year = models.PositiveIntegerField(blank=True, null=True, verbose_name="Năm khám")
+    exam_date = models.DateField(blank=True, null=True, verbose_name="Ngày khám")
+    examination_type_name = models.CharField(max_length=200, blank=True, null=True, verbose_name="Loại khám (text)")
+    clinic_name = models.CharField(max_length=255, blank=True, null=True, verbose_name="Cơ sở khám")
+    height_cm = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    weight_kg = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    blood_pressure = models.CharField(max_length=50, blank=True, null=True)
+    health_classification_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="Phân loại (text)")
+    conclusion_text = models.CharField(max_length=255, blank=True, null=True, verbose_name="Kết luận nhập tay")
+    vaccinated = models.BooleanField(default=False)
+    vaccine_name = models.CharField(max_length=255, blank=True, null=True)
+    vaccination_date = models.DateField(blank=True, null=True)
+    note = models.TextField(blank=True, null=True)
+
+    is_valid = models.BooleanField(default=True, verbose_name="Hợp lệ")
+    error_message = models.TextField(blank=True, null=True, verbose_name="Lỗi (nếu có)")
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "Dữ liệu tạm hồ sơ sức khỏe"
+        verbose_name_plural = "Dữ liệu tạm hồ sơ sức khỏe"
+        ordering = ['-created_at']

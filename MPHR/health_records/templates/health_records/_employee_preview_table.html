@@ -1,0 +1,143 @@
+<style>
+.preview-table-container {
+  max-height: 60vh;       /* Giới hạn chiều cao bảng */
+  overflow-y: auto;        /* Hiện thanh cuộn dọc */
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+}
+
+/* Cố định tiêu đề cột khi cuộn */
+.preview-table-container table thead th {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 2;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+/* ===== MÀU SẮC HÀNG TRONG BẢNG PREVIEW ===== */
+.preview-table-container tbody tr.valid-row {
+  background-color: #eaf8f0;   /* xanh nhạt */
+}
+
+.preview-table-container tbody tr.invalid-row {
+  background-color: #fbeaea;   /* đỏ nhạt */
+}
+
+/* Khi rê chuột */
+.preview-table-container tbody tr:hover {
+  background-color: #f6faff;   /* xanh sáng nhẹ */
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Hiệu ứng viền mảnh và bo góc */
+.preview-table-container table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-table-container th, 
+.preview-table-container td {
+  vertical-align: middle;
+  border-color: #dee2e6;
+}
+/* ===== MÀU HEADER CỦA BẢNG PREVIEW ===== */
+.preview-table-container thead th {
+  background-color: #247efcff !important;
+  color: #ffffffff;
+  font-weight: 600;
+  border-bottom: 2px solid #c8daf7;
+}
+
+/* Cố định header khi cuộn (vẫn giữ màu nền) */
+.preview-table-container table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.preview-table-container thead th:hover {
+  background-color: #1e6ce3 !important;
+  transition: background-color 0.2s ease-in-out;
+}
+.preview-table-container th {
+  border-right: 1px solid rgba(255,255,255,0.2);
+}
+</style>
+
+<div class="card shadow-sm p-3">
+  <h5 class="mb-3">📋 Kết quả kiểm tra dữ liệu</h5>
+
+  <div class="mb-3">
+    <span class="badge bg-primary me-2">Tổng: {{ total }}</span>
+    <span class="badge bg-success me-2">✅ Hợp lệ: {{ valid_count }}</span>
+    <span class="badge bg-danger">❌ Lỗi: {{ invalid_count }}</span>
+  </div>
+
+  <!-- 🔹 Thêm khung giới hạn cuộn -->
+  <div class="preview-table-container">
+    <table class="table table-bordered table-hover align-middle mb-0">
+      <thead class="text-center">
+        <tr>
+          <th>Mã NV</th>
+          <th>Họ và tên</th>
+          <th>Năm sinh</th>
+          <th>Giới tính</th>
+          <th>Chức danh</th>
+          <th>Chức vụ</th>
+          <th>Khoa/Phòng</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in temps %}
+        <tr class="{% if t.is_valid %}valid-row{% else %}invalid-row{% endif %}">
+            <td>{{ t.code }}</td>
+            <td>{{ t.full_name }}</td>
+            <td>{{ t.birth_year }}</td>
+            <td>{{ t.gender }}</td>
+            <td>{{ t.job_title }}</td>
+            <td>{{ t.position }}</td>
+            <td>{{ t.department_name }}</td>
+            <td>
+            {% if t.is_valid %}
+                ✅ Hợp lệ
+            {% else %}
+                ❌ {{ t.error_message }}
+            {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    </table>
+  </div>
+
+  <div class="mt-3 d-flex gap-3">
+    {% if all_valid %}
+      <button class="btn btn-success" onclick="submitImport('{{ batch_id }}')">💾 Lưu vào hệ thống</button>
+    {% else %}
+      <button class="btn btn-success" disabled>💾 Lưu vào hệ thống</button>
+      <small class="text-danger align-self-center">Chỉ có thể lưu khi tất cả dòng hợp lệ</small>
+    {% endif %}
+    <button class="btn btn-outline-danger" onclick="cancelImport('{{ batch_id }}')">❌ Huỷ import</button>
+  </div>
+</div>
+<script>
+// Cho phép click tiêu đề cột để sắp xếp
+document.querySelectorAll('th').forEach(th => {
+  th.addEventListener('click', () => {
+    const table = th.closest('table');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const index = Array.from(th.parentNode.children).indexOf(th);
+    const asc = !th.classList.contains('asc');
+    rows.sort((a, b) => {
+      const A = a.children[index].innerText.trim();
+      const B = b.children[index].innerText.trim();
+      return asc ? A.localeCompare(B, 'vi') : B.localeCompare(A, 'vi');
+    });
+    rows.forEach(row => tbody.appendChild(row));
+    table.querySelectorAll('th').forEach(thx => thx.classList.remove('asc', 'desc'));
+    th.classList.add(asc ? 'asc' : 'desc');
+  });
+});
+</script>

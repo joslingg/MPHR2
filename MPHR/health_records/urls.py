@@ -36,6 +36,11 @@ urlpatterns = [
     path("records/<int:pk>/edit/", views.healthrecord_edit, name="healthrecord_edit"),
     path("records/<int:pk>/delete/", views.healthrecord_delete, name="healthrecord_delete"),
     path("records/<int:pk>/", views.healthrecord_detail, name="healthrecord_detail"),
+    path('records/export/', views.export_healthrecords_xlsx, name='healthrecord_export'),
+    # preview / submit / cancel cho HealthRecord import (AJAX)
+    path('records/import/preview/', views.healthrecord_import_preview_ajax, name='healthrecord_import_preview_ajax'),
+    path('records/import/submit/<str:batch_id>/', views.healthrecord_import_submit_ajax, name='healthrecord_import_submit_ajax'),
+    path('records/import/cancel/<str:batch_id>/', views.healthrecord_import_cancel_ajax, name='healthrecord_import_cancel_ajax'),
 
     
      # === Import excel ===
@@ -43,6 +48,9 @@ urlpatterns = [
     path('download-sample/', views.download_sample_healthrecord, name='download_sample_healthrecord'),
     path("employees/import/", views.employee_import, name="employee_import"),
     path("employees/import/sample/", views.download_sample_employee, name="download_sample_employee"),
-
+    # preview / submit / cancel cho Employee import (AJAX)
+    path("employees/import/preview/", views.employee_import_preview_ajax, name="employee_import_preview_ajax"),
+    path("employees/import/submit/<str:batch_id>/", views.employee_import_submit_ajax, name="employee_import_submit_ajax"),
+    path("employees/import/cancel/<str:batch_id>/", views.employee_import_cancel_ajax, name="employee_import_cancel_ajax"),
 
 ]

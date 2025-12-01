@@ -5,6 +5,7 @@ from .models import (
     HealthClassification,
     Employee,
     HealthRecord,
+    HealthRecordTemp,
 )
 
 
@@ -76,3 +77,9 @@ class HealthRecordAdmin(admin.ModelAdmin):
             "fields": ("result_file", "group", "note", "created_at", "updated_at")
         }),
     )
+
+@admin.register(HealthRecordTemp)
+class HealthRecordTempAdmin(admin.ModelAdmin):
+    list_display = ('batch_id','employee_code','employee_name','year','is_valid','created_at')
+    search_fields = ('batch_id','employee_code','employee_name')
+    readonly_fields = ('created_at',)

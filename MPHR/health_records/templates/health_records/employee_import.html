@@ -1,33 +1,195 @@
 {% extends 'health_records/base.html' %}
-{% block title %}Import nhân viên{% endblock %}
+{% block title %}Import danh sách nhân viên{% endblock %}
+
 {% block content %}
-
 <div class="container mt-4">
-  <h3 class="mb-4">📥 Import danh sách nhân viên từ Excel</h3>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">📤 Import danh sách nhân viên</h3>
+    <a href="{% url 'employee_list' %}" class="btn btn-secondary">⬅ Quay lại</a>
+  </div>
 
-  {% if error %}
-    <div class="alert alert-danger">{{ error }}</div>
-  {% endif %}
-
-  <div class="card p-4 shadow-sm">
-    <form method="post" enctype="multipart/form-data">
+  <div class="card shadow-sm p-4">
+    <form id="importForm" method="post" enctype="multipart/form-data" action="#">
       {% csrf_token %}
       <div class="mb-3">
-        <label class="form-label fw-semibold">Chọn file Excel (.xlsx)</label>
-        <input type="file" name="file" accept=".xlsx,.xls" class="form-control" required>
-        <small class="text-muted">
-          File phải có các cột: Mã nhân viên, Họ và tên, Năm sinh, Giới tính,
-          Chức danh nghề nghiệp, Chức vụ, Khoa/Phòng
-        </small>
+        <label class="form-label fw-semibold">Chọn file Excel (.xlsx):</label>
+        <input type="file" name="file" id="fileInput" accept=".xlsx" class="form-control" required>
       </div>
-      <div class="d-flex gap-3">
-        <a href="{% url 'download_sample_employee' %}" class="btn btn-outline-info">📄 Tải file mẫu</a>
-        <button class="btn btn-outline-success" type="submit">📤 Import</button>
-        <a href="{% url 'employee_list' %}" class="btn btn-outline-secondary">⬅ Quay lại</a>
+
+      <div class="d-flex justify-content-end gap-2">
+        <a href="{% url 'download_sample_employee' %}" class="btn btn-outline-info">
+          📄 Tải file mẫu
+        </a>
+        <button type="submit" class="btn btn-primary">
+          📥 Import & Xem trước
+        </button>
       </div>
     </form>
   </div>
-</div>
 
+  <!-- 🔹 Kết quả preview hiển thị tại đây -->
+  <div id="preview-area" class="mt-4"></div>
+</div>
 {% endblock %}
 
+{% block extra_js %}
+<style>
+/* ===== Scrollable Preview Table ===== */
+.preview-table-container {
+  max-height: 60vh;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+}
+.preview-table-container thead th {
+  background-color: #247efc !important;
+  color: #fff !important;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  border-bottom: 2px solid #c8daf7;
+}
+.preview-table-container tbody tr.valid-row {
+  background-color: #eaf8f0;
+}
+.preview-table-container tbody tr.invalid-row {
+  background-color: #fbeaea;
+}
+.preview-table-container tbody tr:hover {
+  background-color: #f6faff;
+}
+
+/* ===== Toast Style ===== */
+.custom-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 6px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.4s ease;
+  z-index: 9999;
+  font-size: 14px;
+}
+.custom-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.custom-toast.success { background: #198754; }
+.custom-toast.error { background: #dc3545; }
+.custom-toast.info { background: #0d6efd; }
+</style>
+
+<script>
+// ============================
+// 🧩 Import Preview (AJAX)
+// ============================
+document.getElementById('importForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  console.log("🔍 Bắt được sự kiện submit, đang gửi AJAX...");
+
+  const formData = new FormData(this);
+  const fileInput = document.getElementById('fileInput');
+  if (!fileInput.files.length) {
+    showToast("⚠️ Vui lòng chọn file Excel!", "error");
+    return;
+  }
+
+  fetch("{% url 'employee_import_preview_ajax' %}", {
+    method: "POST",
+    body: formData,
+    headers: { "X-CSRFToken": getCookie("csrftoken") },
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        showToast("❌ " + data.error, "error");
+      } else {
+        document.getElementById("preview-area").innerHTML = data.html;
+        showToast("✅ Đã tải dữ liệu xem trước!", "success");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      showToast("❌ Lỗi khi tải dữ liệu xem trước.", "error");
+    });
+});
+
+// ============================
+// 💾 Submit Import
+// ============================
+function submitImport(batch_id) {
+  if (!confirm("Bạn có chắc muốn lưu toàn bộ nhân viên hợp lệ vào hệ thống?")) return;
+
+  fetch(`/employees/import/submit/${batch_id}/`, {
+    method: "POST",
+    headers: { "X-CSRFToken": getCookie("csrftoken") },
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast("💾 Đã lưu thành công!", "success");
+        document.getElementById("preview-area").innerHTML = "";
+        document.getElementById("importForm").reset();
+      } else {
+        showToast("⚠️ Có lỗi khi lưu dữ liệu.", "error");
+      }
+    })
+    .catch(() => showToast("❌ Lỗi hệ thống khi lưu.", "error"));
+}
+
+// ============================
+// ❌ Cancel Import
+// ============================
+function cancelImport(batch_id) {
+  if (!confirm("Huỷ batch import này? Dữ liệu tạm sẽ bị xoá.")) return;
+
+  fetch(`/employees/import/cancel/${batch_id}/`, {
+    method: "POST",
+    headers: { "X-CSRFToken": getCookie("csrftoken") },
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast("🗑️ Đã huỷ batch import.", "info");
+        document.getElementById("preview-area").innerHTML = "";
+        document.getElementById("importForm").reset();
+      }
+    })
+    .catch(() => showToast("❌ Lỗi khi huỷ import.", "error"));
+}
+
+// ============================
+// ⚙️ Helpers
+// ============================
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === name + "=") {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function showToast(message, type = "info") {
+  const toast = document.createElement("div");
+  toast.className = `custom-toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.classList.add("show"), 50);
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 400);
+  }, 3500);
+}
+</script>
+{% endblock %}
